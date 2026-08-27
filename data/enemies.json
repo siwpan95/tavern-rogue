@@ -1,0 +1,525 @@
+[
+  {
+    "id": "goblin_scout",
+    "name": "哥布林斥候",
+    "tier": 1,
+    "attack": 1,
+    "health": 2,
+    "keywords": [],
+    "script": {},
+    "reward_gold": 3,
+    "initiative": 14,
+    "max_health": 2
+  },
+  {
+    "id": "orc_warrior",
+    "name": "兽人战士",
+    "tier": 1,
+    "attack": 2,
+    "health": 2,
+    "keywords": [],
+    "script": {},
+    "reward_gold": 4,
+    "initiative": 10,
+    "max_health": 2
+  },
+  {
+    "id": "skeleton_mage",
+    "name": "骷髅法师",
+    "tier": 2,
+    "attack": 3,
+    "health": 2,
+    "keywords": [
+      "SHIELD"
+    ],
+    "script": {},
+    "reward_gold": 5,
+    "initiative": 8,
+    "max_health": 2
+  },
+  {
+    "id": "cave_trol",
+    "name": "洞穴巨魔",
+    "tier": 2,
+    "attack": 2,
+    "health": 5,
+    "keywords": [
+      "REGENERATION"
+    ],
+    "script": {},
+    "reward_gold": 6,
+    "initiative": 6,
+    "max_health": 5
+  },
+  {
+    "id": "dark_elf_assassin",
+    "name": "暗精灵刺客",
+    "tier": 3,
+    "attack": 4,
+    "health": 3,
+    "keywords": [
+      "DODGE",
+      "POISON"
+    ],
+    "script": {},
+    "reward_gold": 8,
+    "initiative": 13,
+    "max_health": 3
+  },
+  {
+    "id": "stone_golem",
+    "name": "石魔像",
+    "tier": 3,
+    "attack": 3,
+    "health": 6,
+    "keywords": [
+      "GUARD",
+      "ARMOR"
+    ],
+    "script": {},
+    "reward_gold": 10,
+    "initiative": 5,
+    "max_health": 6
+  },
+  {
+    "id": "goblin_shaman",
+    "name": "哥布林萨满",
+    "tier": 2,
+    "attack": 2,
+    "health": 2,
+    "keywords": [],
+    "script": {
+      "battle_start": {
+        "type": "heal_all",
+        "value": 1
+      }
+    },
+    "reward_gold": 4,
+    "initiative": 9,
+    "max_health": 2
+  },
+  {
+    "id": "orc_spear",
+    "name": "兽人投矛手",
+    "tier": 2,
+    "attack": 3,
+    "health": 2,
+    "keywords": [
+      "POISON"
+    ],
+    "script": {},
+    "reward_gold": 5,
+    "initiative": 10,
+    "max_health": 2
+  },
+  {
+    "id": "cave_spider",
+    "name": "地穴蜘蛛",
+    "tier": 2,
+    "attack": 2,
+    "health": 3,
+    "keywords": [
+      "POISON"
+    ],
+    "script": {},
+    "reward_gold": 5,
+    "initiative": 11,
+    "max_health": 3
+  },
+  {
+    "id": "rotting_zombie",
+    "name": "腐烂僵尸",
+    "tier": 3,
+    "attack": 2,
+    "health": 5,
+    "keywords": [],
+    "script": {
+      "deathrattle": {
+        "type": "damage_random",
+        "value": 2
+      }
+    },
+    "reward_gold": 6,
+    "initiative": 4,
+    "max_health": 5
+  },
+  {
+    "id": "harpy",
+    "name": "鹰身女妖",
+    "tier": 3,
+    "attack": 4,
+    "health": 3,
+    "keywords": [
+      "DODGE"
+    ],
+    "script": {},
+    "reward_gold": 7,
+    "initiative": 12,
+    "max_health": 3
+  },
+  {
+    "id": "lizardfolk_stalker",
+    "name": "蜥蜴人潜行者",
+    "tier": 3,
+    "attack": 3,
+    "health": 4,
+    "keywords": [
+      "POISON"
+    ],
+    "script": {},
+    "reward_gold": 7,
+    "initiative": 10,
+    "max_health": 4
+  },
+  {
+    "id": "ogre_brute",
+    "name": "食人魔暴徒",
+    "tier": 4,
+    "attack": 5,
+    "health": 8,
+    "keywords": [
+      "FRENZY"
+    ],
+    "script": {},
+    "reward_gold": 12,
+    "is_elite": true,
+    "initiative": 6,
+    "max_health": 8
+  },
+  {
+    "id": "necromancer",
+    "name": "亡灵法师",
+    "tier": 4,
+    "attack": 3,
+    "health": 6,
+    "keywords": [
+      "SHIELD"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "summon",
+        "summon_id": "skeleton_mage",
+        "count": 1
+      }
+    },
+    "reward_gold": 12,
+    "is_elite": true,
+    "initiative": 7,
+    "max_health": 6
+  },
+  {
+    "id": "manticore",
+    "name": "蝎尾狮",
+    "tier": 5,
+    "attack": 6,
+    "health": 7,
+    "keywords": [
+      "POISON",
+      "FRENZY"
+    ],
+    "script": {},
+    "reward_gold": 15,
+    "is_elite": true,
+    "initiative": 10,
+    "max_health": 7
+  },
+  {
+    "id": "drow_warrior",
+    "name": "暗精灵武者",
+    "tier": 5,
+    "attack": 5,
+    "health": 6,
+    "keywords": [
+      "DODGE",
+      "POISON"
+    ],
+    "script": {},
+    "reward_gold": 15,
+    "is_elite": true,
+    "initiative": 12,
+    "max_health": 6
+  },
+  {
+    "id": "fire_elemental",
+    "name": "烈焰元素",
+    "tier": 6,
+    "attack": 7,
+    "health": 8,
+    "keywords": [
+      "ARMOR"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "damage_all",
+        "value": 2
+      }
+    },
+    "reward_gold": 18,
+    "is_elite": true,
+    "initiative": 8,
+    "max_health": 8
+  },
+  {
+    "id": "wyvern",
+    "name": "双足飞龙",
+    "tier": 6,
+    "attack": 7,
+    "health": 14,
+    "keywords": [
+      "FLYING",
+      "POISON",
+      "ARMOR"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "damage_all",
+        "value": 2
+      }
+    },
+    "reward_gold": 20,
+    "is_boss": true,
+    "initiative": 11,
+    "max_health": 14
+  },
+  {
+    "id": "hydra",
+    "name": "多头蛇蜥",
+    "tier": 6,
+    "attack": 6,
+    "health": 18,
+    "keywords": [
+      "REGENERATION",
+      "FRENZY",
+      "ARMOR"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "heal_all",
+        "value": 3
+      }
+    },
+    "reward_gold": 20,
+    "is_boss": true,
+    "initiative": 7,
+    "max_health": 18
+  },
+  {
+    "id": "ancient_white_dragon",
+    "name": "远古白龙",
+    "tier": 6,
+    "attack": 9,
+    "health": 15,
+    "keywords": [
+      "FLYING",
+      "FIRE_BREATH",
+      "ARMOR"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "damage_all",
+        "value": 4
+      }
+    },
+    "reward_gold": 20,
+    "is_boss": true,
+    "initiative": 9,
+    "max_health": 15
+  },
+  {
+    "id": "ancient_red_dragon",
+    "name": "远古红龙",
+    "tier": 6,
+    "attack": 8,
+    "health": 17,
+    "keywords": [
+      "FLYING",
+      "FIRE_BREATH",
+      "ARMOR"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "damage_all",
+        "value": 3
+      }
+    },
+    "reward_gold": 20,
+    "is_boss": true,
+    "initiative": 9,
+    "max_health": 17
+  },
+  {
+    "id": "gnoll_brute",
+    "name": "豺狼人暴徒",
+    "tier": 4,
+    "attack": 4,
+    "health": 6,
+    "keywords": [
+      "FRENZY"
+    ],
+    "script": {},
+    "reward_gold": 10,
+    "initiative": 8,
+    "max_health": 6
+  },
+  {
+    "id": "ghast",
+    "name": "恐虐尸鬼",
+    "tier": 4,
+    "attack": 3,
+    "health": 5,
+    "keywords": [
+      "POISON"
+    ],
+    "script": {},
+    "reward_gold": 9,
+    "initiative": 7,
+    "max_health": 5
+  },
+  {
+    "id": "wight",
+    "name": "尸妖",
+    "tier": 4,
+    "attack": 4,
+    "health": 5,
+    "keywords": [
+      "SHIELD"
+    ],
+    "script": {},
+    "reward_gold": 11,
+    "initiative": 9,
+    "max_health": 5
+  },
+  {
+    "id": "minotaur",
+    "name": "牛头人",
+    "tier": 5,
+    "attack": 6,
+    "health": 8,
+    "keywords": [
+      "GUARD",
+      "FRENZY"
+    ],
+    "script": {},
+    "reward_gold": 14,
+    "initiative": 7,
+    "max_health": 8
+  },
+  {
+    "id": "specter",
+    "name": "幽灵",
+    "tier": 5,
+    "attack": 5,
+    "health": 4,
+    "keywords": [
+      "DODGE",
+      "POISON"
+    ],
+    "script": {},
+    "reward_gold": 13,
+    "initiative": 13,
+    "max_health": 4
+  },
+  {
+    "id": "basilisk",
+    "name": "鸡蛇",
+    "tier": 5,
+    "attack": 5,
+    "health": 6,
+    "keywords": [
+      "GUARD"
+    ],
+    "script": {},
+    "reward_gold": 13,
+    "initiative": 8,
+    "max_health": 6
+  },
+  {
+    "id": "archmage",
+    "name": "大法师",
+    "tier": 6,
+    "attack": 8,
+    "health": 6,
+    "keywords": [
+      "SHIELD",
+      "DODGE"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "damage_random",
+        "value": 3
+      }
+    },
+    "reward_gold": 18,
+    "initiative": 10,
+    "max_health": 6
+  },
+  {
+    "id": "pit_fiend",
+    "name": "炼狱魔",
+    "tier": 6,
+    "attack": 7,
+    "health": 10,
+    "keywords": [
+      "FIRE_BREATH",
+      "ARMOR"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "damage_all",
+        "value": 2
+      }
+    },
+    "reward_gold": 19,
+    "initiative": 9,
+    "max_health": 10
+  },
+  {
+    "id": "bandit_group",
+    "name": "匪徒团伙",
+    "tier": 2,
+    "attack": 2,
+    "health": 3,
+    "keywords": [],
+    "script": {},
+    "reward_gold": 8,
+    "initiative": 12,
+    "max_health": 3
+  },
+  {
+    "id": "orc_champion",
+    "name": "兽人冠军",
+    "tier": 4,
+    "attack": 5,
+    "health": 7,
+    "keywords": [
+      "FRENZY",
+      "GUARD"
+    ],
+    "script": {},
+    "reward_gold": 12,
+    "is_elite": true,
+    "initiative": 8,
+    "max_health": 7
+  },
+  {
+    "id": "tiefling_devil",
+    "name": "提夫林恶魔",
+    "tier": 4,
+    "attack": 4,
+    "health": 5,
+    "keywords": [
+      "DODGE",
+      "FIRE_BREATH"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "damage_all",
+        "value": 1
+      }
+    },
+    "reward_gold": 10,
+    "is_elite": true,
+    "initiative": 11,
+    "max_health": 5
+  }
+]

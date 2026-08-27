@@ -1,0 +1,594 @@
+[
+  {
+    "id": "magic_fountain",
+    "name": "魔法喷泉",
+    "description": "你发现了一个发光的水池，水面闪烁着神秘的能量。",
+    "options": [
+      {
+        "text": "饮用泉水",
+        "effects": {
+          "heal": 5
+        },
+        "outcome": "你感到精力充沛，恢复了 5 点生命值。"
+      },
+      {
+        "text": "收集泉水",
+        "effects": {
+          "gain_adventurer": {
+            "tier": 2,
+            "random": true
+          }
+        },
+        "outcome": "你获得了一个随机的2星冒险者。"
+      },
+      {
+        "text": "投币许愿",
+        "effects": {
+          "coin_flip": true
+        },
+        "outcome": "硬币在空中旋转...结果未知！"
+      }
+    ]
+  },
+  {
+    "id": "greedy_mimic",
+    "name": "贪婪的宝箱怪",
+    "description": "一个华丽的宝箱吸引了你的注意，但它似乎...在呼吸？",
+    "options": [
+      {
+        "text": "战斗！",
+        "effects": {
+          "start_battle": {
+            "enemy": "mimic",
+            "reward_gold": 15
+          }
+        },
+        "outcome": "宝箱怪苏醒了！击败它获得丰厚奖励！"
+      },
+      {
+        "text": "悄悄离开",
+        "effects": {
+          "damage_all": 1
+        },
+        "outcome": "宝箱怪突然爆炸！你的队伍受到 1 点伤害。"
+      }
+    ]
+  },
+  {
+    "id": "ghostly_plea",
+    "name": "幽灵的恳求",
+    "description": "一个透明的幽灵出现在你面前，哀求你的帮助。",
+    "options": [
+      {
+        "text": "帮助幽灵",
+        "effects": {
+          "lose_relic": 1,
+          "gain_adventurer": {
+            "tier": 3,
+            "random": true
+          }
+        },
+        "outcome": "你失去了一件宝物，但获得了一个强大的3星冒险者。"
+      },
+      {
+        "text": "无视幽灵",
+        "effects": {},
+        "outcome": "幽灵默默地消失了。什么事都没发生。"
+      }
+    ]
+  },
+  {
+    "id": "mysterious_merchant",
+    "name": "神秘商人",
+    "description": "一个披着斗篷的商人出现在路边，他的货物闪烁着奇异的光芒。",
+    "options": [
+      {
+        "text": "购买随机宝物（花费 10 铸币）",
+        "effects": {
+          "cost_gold": 10,
+          "gain_relic": {
+            "random": true
+          }
+        },
+        "outcome": "你花费 10 铸币购买了一件随机宝物。"
+      },
+      {
+        "text": "离开",
+        "effects": {},
+        "outcome": "你决定不购买任何东西。"
+      }
+    ]
+  },
+  {
+    "id": "ancient_altar",
+    "name": "古老祭坛",
+    "description": "你发现了一个刻满符文的古老祭坛，空气中弥漫着魔法的气息。",
+    "options": [
+      {
+        "text": "献祭 5 点生命值",
+        "effects": {
+          "damage_hero": 5,
+          "gain_gold": 10
+        },
+        "outcome": "你献祭了 5 点生命值，获得了 10 铸币。"
+      },
+      {
+        "text": "献祭一个冒险者",
+        "effects": {
+          "sacrifice_adventurer": true,
+          "heal_hero": 10
+        },
+        "outcome": "你献祭了一个冒险者，恢复了 10 点生命值。"
+      },
+      {
+        "text": "离开祭坛",
+        "effects": {},
+        "outcome": "你决定不触碰这个神秘的祭坛。"
+      }
+    ]
+  },
+  {
+    "id": "training_ground",
+    "name": "训练场",
+    "description": "一片废弃的训练场，木桩和靶子散落在地。你可以在这里磨炼队伍。",
+    "options": [
+      {
+        "text": "强化攻击（场上单位攻击+1）",
+        "effects": {
+          "upgrade_board": {
+            "stat": "attack",
+            "value": 1
+          }
+        },
+        "outcome": "你的队伍完成了攻击训练，所有场上单位攻击+1。"
+      },
+      {
+        "text": "强化体能（场上单位生命+2）",
+        "effects": {
+          "upgrade_board": {
+            "stat": "health",
+            "value": 2
+          }
+        },
+        "outcome": "你的队伍完成了体能训练，所有场上单位生命+2。"
+      },
+      {
+        "text": "离开",
+        "effects": {},
+        "outcome": "你决定不在这里浪费时间。"
+      }
+    ]
+  },
+  {
+    "id": "shady_gamble",
+    "name": "暗影赌徒",
+    "description": "一个戴着面具的赌徒坐在阴影中，面前摆着一枚硬币和一口袋宝物。",
+    "options": [
+      {
+        "text": "抛硬币赌命",
+        "effects": {
+          "coin_flip": true
+        },
+        "outcome": "硬币在空中旋转……命运即将揭晓。"
+      },
+      {
+        "text": "花费 5 铸币赌宝物",
+        "effects": {
+          "cost_gold": 5,
+          "gain_relic": {
+            "random": true
+          }
+        },
+        "outcome": "你花了 5 铸币，从赌徒手中获得一件随机宝物。"
+      },
+      {
+        "text": "拒绝诱惑",
+        "effects": {},
+        "outcome": "你转身离开，赌徒的笑声在身后回荡。"
+      }
+    ]
+  },
+  {
+    "id": "purifier_shrine",
+    "name": "净化神殿",
+    "description": "一座古老的神殿，喷泉中流淌着银色的圣水。",
+    "options": [
+      {
+        "text": "净化队伍（移除剧毒/虚弱）",
+        "effects": {
+          "purify_board": true
+        },
+        "outcome": "圣水涤荡了队伍的负面状态。"
+      },
+      {
+        "text": "饮用圣水（恢复 5 生命）",
+        "effects": {
+          "heal": 5
+        },
+        "outcome": "你感到神清气爽，恢复了 5 点生命值。"
+      },
+      {
+        "text": "离开神殿",
+        "effects": {},
+        "outcome": "你决定不打扰这片圣地。"
+      }
+    ]
+  },
+  {
+    "id": "forgotten_library",
+    "name": "遗忘图书馆",
+    "description": "书架直达穹顶，一本发光的魔法书吸引了你的目光。",
+    "options": [
+      {
+        "text": "阅读入门卷轴（获得随机 2 星冒险者）",
+        "effects": {
+          "gain_adventurer": {
+            "tier": 2,
+            "random": true
+          }
+        },
+        "outcome": "你学会了一个新法术，召唤出一名 2 星冒险者。"
+      },
+      {
+        "text": "花费 6 铸币研习高阶卷轴（获得随机 4 星冒险者）",
+        "effects": {
+          "cost_gold": 6,
+          "gain_adventurer": {
+            "tier": 4,
+            "random": true
+          }
+        },
+        "outcome": "高阶知识涌入脑海，一名 4 星冒险者加入队伍。"
+      },
+      {
+        "text": "离开",
+        "effects": {},
+        "outcome": "你合上书，离开了图书馆。"
+      }
+    ]
+  },
+  {
+    "id": "black_market",
+    "name": "黑市",
+    "description": "狭窄巷道中，几个蒙面商人低声交谈，似乎在出售违禁品。",
+    "options": [
+      {
+        "text": "花费 8 铸币雇佣强援（获得随机 4 星冒险者）",
+        "effects": {
+          "cost_gold": 8,
+          "gain_adventurer": {
+            "tier": 4,
+            "random": true
+          }
+        },
+        "outcome": "一名 4 星强援加入了你的队伍。"
+      },
+      {
+        "text": "花费 10 铸币购买走私宝物",
+        "effects": {
+          "cost_gold": 10,
+          "gain_relic": {
+            "random": true
+          }
+        },
+        "outcome": "你获得了一件来历不明的宝物。"
+      },
+      {
+        "text": "离开黑市",
+        "effects": {},
+        "outcome": "你迅速离开，避免惹上麻烦。"
+      }
+    ]
+  },
+  {
+    "id": "dwarven_forge",
+    "name": "矮人锻造坊",
+    "description": "炽热的熔炉旁，一名矮人铁匠正在敲打盔甲。他愿意为你强化装备。",
+    "options": [
+      {
+        "text": "为随机场上单位锻造 GUARD",
+        "effects": {
+          "enchant_board": {
+            "keyword": "GUARD"
+          }
+        },
+        "outcome": "铁匠为一名冒险者打造了坚固的盾牌。"
+      },
+      {
+        "text": "为所有场上单位镀上 SHIELD",
+        "effects": {
+          "enchant_board": {
+            "keyword": "SHIELD",
+            "all": true
+          }
+        },
+        "outcome": "所有场上单位都获得了一层力场护盾。"
+      },
+      {
+        "text": "离开锻造坊",
+        "effects": {},
+        "outcome": "你谢过铁匠，继续上路。"
+      }
+    ]
+  },
+  {
+    "id": "time_rift",
+    "name": "时间裂隙",
+    "description": "一道扭曲的裂隙悬在空中，里面的景象不断变换，仿佛是另一条时间线。",
+    "options": [
+      {
+        "text": "重塑当前层地图",
+        "effects": {
+          "regenerate_map": true
+        },
+        "outcome": "你撕开了时间线，本层地图重新生成。"
+      },
+      {
+        "text": "汲取时间能量（恢复 8 生命）",
+        "effects": {
+          "heal": 8
+        },
+        "outcome": "时间能量涌入你的身体，恢复了 8 点生命值。"
+      },
+      {
+        "text": "远离裂隙",
+        "effects": {},
+        "outcome": "你小心翼翼地绕开了这个不稳定区域。"
+      }
+    ]
+  },
+  {
+    "id": "bandit_ambush",
+    "name": "匪徒伏击",
+    "description": "一群匪徒从树林中跳出来，挡住了你的去路。",
+    "options": [
+      {
+        "text": "战斗！",
+        "effects": {
+          "start_battle": {
+            "enemy": "bandit_group",
+            "reward_gold": 8
+          }
+        },
+        "outcome": "你击败了匪徒，获得了 8 枚铸币。"
+      },
+      {
+        "text": "交出铸币",
+        "effects": {
+          "cost_gold": 5,
+          "avoid_combat": true
+        },
+        "outcome": "你交出了 5 枚铸币，匪徒放你通过。"
+      },
+      {
+        "text": "绕道而行",
+        "effects": {},
+        "outcome": "你选择了绕道，安全但浪费了时间。"
+      }
+    ]
+  },
+  {
+    "id": "sacred_grove",
+    "name": "神圣小树林",
+    "description": "一片宁静的小树林，阳光透过树叶洒下金色的光斑。",
+    "options": [
+      {
+        "text": "在林中休息",
+        "effects": {
+          "heal": 8
+        },
+        "outcome": "你在林中休息，恢复了 8 点生命值。"
+      },
+      {
+        "text": "采集圣水",
+        "effects": {
+          "gain_relic": {
+            "random": true
+          }
+        },
+        "outcome": "你采集到了一瓶圣水（随机宝物）。"
+      },
+      {
+        "text": "继续赶路",
+        "effects": {},
+        "outcome": "你没有时间耽搁，继续赶路。"
+      }
+    ]
+  },
+  {
+    "id": "orc_camp",
+    "name": "半兽人营地",
+    "description": "你发现了一个半兽人营地，他们似乎在庆祝什么。",
+    "options": [
+      {
+        "text": "加入庆祝",
+        "effects": {
+          "buff_board": {
+            "keyword": "FRENZY"
+          }
+        },
+        "outcome": "半兽人们欢迎你加入，你的半兽人冒险者获得了狂怒！"
+      },
+      {
+        "text": "挑战酋长",
+        "effects": {
+          "start_battle": {
+            "enemy": "orc_champion",
+            "reward_gold": 12
+          }
+        },
+        "outcome": "你击败了酋长，获得了 12 枚铸币和族群的尊重。"
+      },
+      {
+        "text": "悄悄离开",
+        "effects": {},
+        "outcome": "你决定不惹麻烦，悄悄离开了营地。"
+      }
+    ]
+  },
+  {
+    "id": "dragon_lair",
+    "name": "龙巢",
+    "description": "你发现了一个巨大的洞穴，里面散发着热浪和龙的气息。",
+    "options": [
+      {
+        "text": "搜索财宝",
+        "effects": {
+          "gain_gold": 15,
+          "damage_hero": 3
+        },
+        "outcome": "你找到了一些财宝（15 铸币），但被龙息烧伤了（失去 3 点生命）。"
+      },
+      {
+        "text": "献上祭品",
+        "effects": {
+          "gain_adventurer": {
+            "tier": 4,
+            "random": true
+          }
+        },
+        "outcome": "龙接受了你的祭品，赐予你一名 4 星冒险者。"
+      },
+      {
+        "text": "快速离开",
+        "effects": {},
+        "outcome": "你明智地选择了离开，龙还在睡觉。"
+      }
+    ]
+  },
+  {
+    "id": "tiefling_pact",
+    "name": "提夫林契约",
+    "description": "一个提夫林出现在你面前，提出一个诱人的契约。",
+    "options": [
+      {
+        "text": "接受契约",
+        "effects": {
+          "damage_hero": 5,
+          "gain_relic": {
+            "random": true
+          }
+        },
+        "outcome": "你失去了 5 点生命值，但获得了一件强力宝物！"
+      },
+      {
+        "text": "拒绝契约",
+        "effects": {
+          "heal": 3
+        },
+        "outcome": "你拒绝了契约，但提夫林留下了祝福（恢复 3 点生命）。"
+      },
+      {
+        "text": "攻击提夫林",
+        "effects": {
+          "start_battle": {
+            "enemy": "tiefling_devil",
+            "reward_gold": 10
+          }
+        },
+        "outcome": "你击败了提夫林恶魔，获得了 10 枚铸币。"
+      }
+    ]
+  },
+  {
+    "id": "dwarven_mine",
+    "name": "矮人矿坑",
+    "description": "一座繁忙的矮人矿坑，矿坑挖出了闪亮的矿石。",
+    "options": [
+      {
+        "text": "帮助采矿",
+        "effects": {
+          "upgrade_board": {
+            "keyword": "ARMOR"
+          }
+        },
+        "outcome": "矮人们感谢你的帮助，为你的矮人冒险者装上了护甲！"
+      },
+      {
+        "text": "购买矿石",
+        "effects": {
+          "cost_gold": 8,
+          "gain_relic": {
+            "random": true
+          }
+        },
+        "outcome": "你花费 8 枚铸币购买了一块神秘矿石（随机宝物）。"
+      },
+      {
+        "text": "继续旅行",
+        "effects": {
+          "gain_gold": 5
+        },
+        "outcome": "矮人们感谢你的到访，送给你 5 枚铸币。"
+      }
+    ]
+  },
+  {
+    "id": "wandering_trader",
+    "name": "流浪商人",
+    "description": "一个骑着骆驼的商人拦住了你，他有一车的珍稀货物。",
+    "options": [
+      {
+        "text": "购买随机宝物（花费 7 铸币）",
+        "effects": {
+          "cost_gold": 7,
+          "gain_relic": {
+            "random": true
+          }
+        },
+        "outcome": "你花费 7 枚铸币购买了一件随机宝物。"
+      },
+      {
+        "text": "以物易物",
+        "effects": {
+          "sacrifice_adventurer": true,
+          "gain_relic": {
+            "random": true
+          }
+        },
+        "outcome": "你献祭了一名冒险者，换得了一件随机宝物。"
+      },
+      {
+        "text": "免费获得情报",
+        "effects": {
+          "reveal_map": true
+        },
+        "outcome": "商人告诉你了前方地图的信息。"
+      }
+    ]
+  },
+  {
+    "id": "ancient_ruins",
+    "name": "远古遗迹",
+    "description": "一片倒塌的石柱和废墟，空气中弥漫着魔法的痕迹。",
+    "options": [
+      {
+        "text": "探索废墟",
+        "effects": {
+          "gain_relic": {
+            "random": true
+          },
+          "discover_adventurer": {
+            "tier": 3
+          }
+        },
+        "outcome": "你在废墟中找到了一件宝物和一名 3 星冒险者！"
+      },
+      {
+        "text": "研究符文",
+        "effects": {
+          "upgrade_board": {
+            "stat": "attack",
+            "value": 1
+          }
+        },
+        "outcome": "你研究了远古符文，所有场上冒险者攻击力+1。"
+      },
+      {
+        "text": "离开遗迹",
+        "effects": {},
+        "outcome": "你决定不在危险的废墟中逗留。"
+      }
+    ]
+  }
+]

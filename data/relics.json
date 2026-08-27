@@ -1,0 +1,263 @@
+[
+  {
+    "id": "regeneration_amulet",
+    "name": "再生护符",
+    "description": "每回合结束时，恢复英雄 2 点生命值。",
+    "rarity": "common",
+    "effect": {
+      "type": "heal_per_turn",
+      "value": 2
+    }
+  },
+  {
+    "id": "boots_of_speed",
+    "name": "速度之靴",
+    "description": "你的冒险者攻击时，有 10% 几率先攻（连续攻击两次）。",
+    "rarity": "common",
+    "effect": {
+      "type": "double_attack_chance",
+      "value": 0.1
+    }
+  },
+  {
+    "id": "force_field_ring",
+    "name": "力场戒指",
+    "description": "每场战斗一次：给你的一个冒险者施加力场护盾。",
+    "rarity": "rare",
+    "effect": {
+      "type": "battle_shield_once",
+      "value": 1
+    }
+  },
+  {
+    "id": "fireball_wand",
+    "name": "火球魔杖",
+    "description": "战斗开始时，对 3 个随机敌人各造成 1 点伤害。",
+    "rarity": "rare",
+    "effect": {
+      "type": "battle_start_damage",
+      "value": 1,
+      "targets": 3
+    }
+  },
+  {
+    "id": "necromancy_book",
+    "name": "亡灵法书",
+    "description": "你的亡者遗赠效果额外触发一次。",
+    "rarity": "epic",
+    "effect": {
+      "type": "deathrattle_double",
+      "value": 1
+    }
+  },
+  {
+    "id": "giant_strength_belt",
+    "name": "巨人力量腰带",
+    "description": "你的冒险者获得 +1 攻击力。",
+    "rarity": "common",
+    "effect": {
+      "type": "global_attack_bonus",
+      "value": 1
+    }
+  },
+  {
+    "id": "displacement_cloak",
+    "name": "移位斗篷",
+    "description": "你的冒险者有 15% 几率闪避攻击。",
+    "rarity": "rare",
+    "effect": {
+      "type": "dodge_chance",
+      "value": 0.15
+    }
+  },
+  {
+    "id": "circlet_of_focus",
+    "name": "专注头环",
+    "description": "战斗开始时，所有友军攻击力+1。",
+    "rarity": "common",
+    "effect": {
+      "type": "battle_start_buff",
+      "stat": "attack",
+      "value": 1
+    }
+  },
+  {
+    "id": "vampiric_cloak",
+    "name": "吸血披风",
+    "description": "战斗开始时，对随机敌人造成 2 点伤害，并恢复英雄等量生命值。",
+    "rarity": "rare",
+    "effect": {
+      "type": "battle_start_lifesteal",
+      "value": 2
+    }
+  },
+  {
+    "id": "tome_of_sage",
+    "name": "贤者之书",
+    "description": "战斗开始时，所有友军生命值+1。",
+    "rarity": "rare",
+    "effect": {
+      "type": "battle_start_buff",
+      "stat": "health",
+      "value": 1
+    }
+  },
+  {
+    "id": "dwarven_armor",
+    "name": "矮人板甲",
+    "description": "所有矮人冒险者获得护甲（伤害-1）。",
+    "rarity": "rare",
+    "effect": {
+      "type": "tribe_buff",
+      "tribe": "dwarf",
+      "stat": "ARMOR",
+      "value": 1
+    }
+  },
+  {
+    "id": "elven_bow",
+    "name": "精灵长弓",
+    "description": "所有精灵冒险者获得 +10% 闪避几率。",
+    "rarity": "rare",
+    "effect": {
+      "type": "tribe_dodge",
+      "tribe": "elf",
+      "value": 0.1
+    }
+  },
+  {
+    "id": "half_orc_axe",
+    "name": "半兽人战斧",
+    "description": "所有半兽人冒险者攻击力+1。",
+    "rarity": "rare",
+    "effect": {
+      "type": "tribe_buff",
+      "tribe": "half_orc",
+      "stat": "attack",
+      "value": 1
+    }
+  },
+  {
+    "id": "tiefling_orb",
+    "name": "提夫林宝珠",
+    "description": "提夫林冒险者死亡时对随机敌人造成 2 点暗影伤害。",
+    "rarity": "epic",
+    "effect": {
+      "type": "tribe_death_damage",
+      "tribe": "tiefling",
+      "value": 2
+    }
+  },
+  {
+    "id": "dragonborn_scale",
+    "name": "龙裔龙鳞",
+    "description": "龙裔的火焰吐息伤害+1。",
+    "rarity": "epic",
+    "effect": {
+      "type": "tribe_fire_bonus",
+      "tribe": "dragonborn",
+      "value": 1
+    }
+  },
+  {
+    "id": "pouch_of_plenty",
+    "name": "丰饶钱袋",
+    "description": "每场战斗后额外获得 1 铸币。",
+    "rarity": "common",
+    "effect": {
+      "type": "extra_gold",
+      "value": 1
+    }
+  },
+  {
+    "id": "healing_charm",
+    "name": "治疗护符",
+    "description": "友军击杀敌人时恢复 1 点生命值。",
+    "rarity": "common",
+    "effect": {
+      "type": "heal_on_kill",
+      "value": 1
+    }
+  },
+  {
+    "id": "deep_blade",
+    "name": "深渊之刃",
+    "description": "战斗开始时，降低所有敌人 1 点攻击力。",
+    "rarity": "rare",
+    "effect": {
+      "type": "battle_start_debuff",
+      "stat": "attack",
+      "value": -1
+    }
+  },
+  {
+    "id": "warding_totem",
+    "name": "守护图腾",
+    "description": "战斗开始时，所有友军获得力场护盾。",
+    "rarity": "rare",
+    "effect": {
+      "type": "battle_start_shield_all",
+      "value": 1
+    }
+  },
+  {
+    "id": "luck_coin",
+    "name": "幸运金币",
+    "description": "宝物掉落率提高 20%。",
+    "rarity": "common",
+    "effect": {
+      "type": "relic_drop_bonus",
+      "value": 0.2
+    }
+  },
+  {
+    "id": "merchants_blessing",
+    "name": "商人祝福",
+    "description": "商店物品价格降低 1 铸币。",
+    "rarity": "rare",
+    "effect": {
+      "type": "shop_discount",
+      "value": 1
+    }
+  },
+  {
+    "id": "phoenix_ash",
+    "name": "凤凰灰烬",
+    "description": "每场战斗一次，英雄死亡时复活（恢复 5 点生命）。",
+    "rarity": "epic",
+    "effect": {
+      "type": "revive_on_death",
+      "value": 5
+    }
+  },
+  {
+    "id": "berserker_potion",
+    "name": "狂暴药剂",
+    "description": "每场战斗一次，下一次攻击造成双倍伤害。",
+    "rarity": "rare",
+    "effect": {
+      "type": "double_damage_once",
+      "value": 1
+    }
+  },
+  {
+    "id": "ancient_shield",
+    "name": "远古盾牌",
+    "description": "战斗开始时，随机一名友军获得守卫。",
+    "rarity": "common",
+    "effect": {
+      "type": "battle_start_random_guard",
+      "value": 1
+    }
+  },
+  {
+    "id": "shadow_cloak",
+    "name": "暗影斗篷",
+    "description": "所有友军获得 +5% 闪避几率。",
+    "rarity": "common",
+    "effect": {
+      "type": "global_dodge",
+      "value": 0.05
+    }
+  }
+]

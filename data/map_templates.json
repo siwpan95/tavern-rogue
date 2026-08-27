@@ -1,0 +1,110 @@
+{
+  "layers": [
+    {
+      "layer": 1,
+      "name": "地城入口",
+      "type": "camp",
+      "nodes": 1,
+      "description": "安全营地，可以恢复生命值。"
+    },
+    {
+      "layer": 2,
+      "name": "地下通道",
+      "type": "random",
+      "nodes": 3,
+      "possible_types": ["monster", "elite", "event", "camp"],
+      "description": "黑暗的通道，充满未知的危险。"
+    },
+    {
+      "layer": 3,
+      "name": "遗忘大厅",
+      "type": "random",
+      "nodes": 3,
+      "possible_types": ["monster", "elite", "event", "shop"],
+      "description": "古老的大厅，回荡着诡异的声音。"
+    },
+    {
+      "layer": 4,
+      "name": "深渊走廊",
+      "type": "random",
+      "nodes": 3,
+      "possible_types": ["monster", "elite", "event", "camp"],
+      "description": "深邃的走廊，似乎没有尽头。"
+    },
+    {
+      "layer": 5,
+      "name": "魔法图书馆",
+      "type": "random",
+      "nodes": 3,
+      "possible_types": ["monster", "elite", "event", "shop"],
+      "description": "堆积着古老典籍的图书馆，魔法能量在此汇聚。"
+    },
+    {
+      "layer": 6,
+      "name": "巨龙前厅",
+      "type": "random",
+      "nodes": 2,
+      "possible_types": ["elite", "event"],
+      "description": "龙穴的入口，空气中弥漫着硫磺味。"
+    },
+    {
+      "layer": 7,
+      "name": "龙穴深处",
+      "type": "random",
+      "nodes": 2,
+      "possible_types": ["elite", "boss"],
+      "description": "终于到达了巨龙的巢穴！"
+    },
+    {
+      "layer": 8,
+      "name": "远古龙穴",
+      "type": "boss",
+      "nodes": 1,
+      "boss": "ancient_red_dragon",
+      "description": "远古红龙的巢穴，最终决战！"
+    },
+    {
+      "layer": 9,
+      "name": "宝藏密室",
+      "type": "treasure",
+      "nodes": 1,
+      "requirement": "has_special_item",
+      "description": "隐藏的宝藏密室，只有携带特殊物品的勇者才能进入。"
+    }
+  ],
+  "node_types": {
+    "monster": {
+      "name": "怪物巢穴",
+      "description": "普通的怪物战斗",
+      "reward_gold": true,
+      "reward_discover": true
+    },
+    "elite": {
+      "name": "精英守卫",
+      "description": "高难度战斗，必得魔法物品",
+      "reward_relic": true
+    },
+    "shop": {
+      "name": "旅行商人",
+      "description": "可以购买冒险者或魔法物品"
+    },
+    "event": {
+      "name": "古老祭坛",
+      "description": "随机事件，可能获得增益或减益"
+    },
+    "camp": {
+      "name": "安全营地",
+      "description": "恢复生命值或训练冒险者"
+    },
+    "boss": {
+      "name": "首领",
+      "description": "层级Boss，击败后进入下一层",
+      "reward_relic": true,
+      "upgrade_tavern": true
+    },
+    "treasure": {
+      "name": "宝藏密室",
+      "description": "大量铸币和稀有宝物"
+    }
+  }
+}

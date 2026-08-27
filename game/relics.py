@@ -1,0 +1,358 @@
+"""
+宝物系统 - 管理魔法物品的被动效果
+支持7种魔法物品，包括触发时机（战斗开始、购买时、亡语等）
+"""
+import json
+import random
+
+
+class RelicSystem:
+    """宝物管理系统"""
+    
+    def __init__(self, data_loader):
+        """
+        初始化宝物系统
+        data_loader: 数据加载器函数
+        """
+        self.data_loader = data_loader
+        self.relics = []  # 当前携带的宝物
+        self.relics_data = None
+        self.max_relics = 6
+        
+        # 加载宝物数据
+        self._load_relics_data()
+    
+    def _load_relics_data(self):
+        """加载宝物数据"""
+        try:
+            self.relics_data = self.data_loader('relics.json')
+        except Exception as e:
+            print(f"加载宝物数据失败: {e}")
+            self.relics_data = []
+    
+    def add_relic(self, relic):
+        """
+        添加宝物
+        relic: 宝物数据字典 或 宝物ID
+        返回: (成功?, 消息)
+        """
+        if len(self.relics) >= self.max_relics:
+            return False, f"宝物已满！最多携带 {self.max_relics} 件"
+        
+        # 如果传入的是ID，查找宝物数据
+        if isinstance(relic, str):
+            relic = self._find_relic_by_id(relic)
+            if not relic:
+                return False, "找不到指定的宝物"
+        
+        # 检查是否已拥有（某些宝物可以重复）
+        # 简化处理：允许重复
+        self.relics.append(relic.copy())
+        
+        return True, f"获得宝物: {relic['name']}"
+    
+    def remove_relic(self, index):
+        """
+        移除宝物
+        index: 宝物索引
+        返回: (成功?, 消息)
+        """
+        if index < 0 or index >= len(self.relics):
+            return False, "无效的宝物索引"
+        
+        relic = self.relics.pop(index)
+        return True, f"失去宝物: {relic['name']}"
+    
+    def get_relics(self):
+        """获取所有宝物"""
+        return self.relics
+    
+    def clear_relics(self):
+        """清空所有宝物（用于新游戏）"""
+        self.relics.clear()
+    
+    def _find_relic_by_id(self, relic_id):
+        """根据ID查找宝物数据"""
+        for relic in self.relics_data:
+            if relic['id'] == relic_id:
+                return relic
+        return None
+    
+    def get_combined_effects(self):
+        """获取所有宝物的组合效果"""
+        effects = {}
+        
+        for relic in self.relics:
+            effect = relic.get('effect', {})
+            effect_type = effect.get('type')
+            value = effect.get('value', 0)
+            
+            if effect_type in effects:
+                # 叠加效果
+                if isinstance(effects[effect_type], (int, float)):
+                    effects[effect_type] += value
+                elif isinstance(effects[effect_type], list):
+                    effects[effect_type].append(value)
+            else:
+                effects[effect_type] = value
+        
+        return effects
+    
+    def apply_battle_start_effects(self, allies, enemies):
+        """
+        应用战斗开始时的宝物效果
+        allies: 友军列表
+        enemies: 敌军列表
+        """
+        log = []
+        
+        for relic in self.relics:
+            effect = relic.get('effect', {})
+            effect_type = effect.get('type')
+            
+            if effect_type == 'battle_start_damage':
+                # 战斗开始时对随机敌人造成伤害
+                damage = effect.get('value', 0)
+                target_count = effect.get('targets', 1)
+                
+                for _ in range(target_count):
+                    if enemies:
+                        target = random.choice(enemies)
+                        if target['health'] > 0:
+                            target['health'] -= damage
+                            log.append(f"{relic['name']}: 对 {target['name']} 造成 {damage} 点伤害")
+                            
+                            # 检查死亡
+                            if target['health'] <= 0:
+                                log.append(f"{target['name']} 被宝物效果消灭！")
+            
+            elif effect_type == 'battle_start_buff':
+                # 战斗开始时强化所有友军
+                stat = effect.get('stat', 'attack')
+                value = effect.get('value', 1)
+                for ally in allies:
+                    if ally['health'] > 0:
+                        ally[stat] = ally.get(stat, 0) + value
+                        if 'max_health' not in ally:
+                            ally['max_health'] = ally.get('health', 0)
+                        if stat == 'health':
+                            ally['max_health'] += value
+                log.append(f"{relic['name']}: 所有友军 {stat}+{value}")
+            
+            elif effect_type == 'battle_start_lifesteal':
+                # 战斗开始时造成伤害并治疗英雄
+                if enemies:
+                    alive = [e for e in enemies if e['health'] > 0]
+                    if alive:
+                        target = random.choice(alive)
+                        damage = effect.get('value', 0)
+                        target['health'] -= damage
+                        log.append(f"{relic['name']}: 对 {target['name']} 造成 {damage} 点伤害")
+                        # 治疗英雄逻辑在 BattleScene 中处理，这里记录
+                        log.append(f"{relic['name']}: 恢复英雄 {damage} 点生命值")
+                        if target['health'] <= 0:
+                            log.append(f"{target['name']} 被宝物效果消灭！")
+            
+            elif effect_type == 'battle_shield_once':
+                # 战斗开始时给一个友军施加护盾
+                if allies:
+                    target = random.choice(allies)
+                    if 'keywords' not in target:
+                        target['keywords'] = []
+                    if 'SHIELD' not in target['keywords']:
+                        target['keywords'].append('SHIELD')
+                        log.append(f"{relic['name']}: {target['name']} 获得力场护盾")
+        
+        return log
+    
+    def apply_heal_per_turn(self, hero):
+        """应用每回合治疗效果"""
+        log = []
+        
+        for relic in self.relics:
+            effect = relic.get('effect', {})
+            if effect.get('type') == 'heal_per_turn':
+                heal_amount = effect.get('value', 0)
+                if hero:
+                    hero.heal(heal_amount)
+                    log.append(f"{relic['name']}: 恢复 {heal_amount} 点生命值")
+        
+        return log
+    
+    def apply_global_attack_bonus(self):
+        """获取全局攻击力加成"""
+        bonus = 0
+        
+        for relic in self.relics:
+            effect = relic.get('effect', {})
+            if effect.get('type') == 'global_attack_bonus':
+                bonus += effect.get('value', 0)
+        
+        return bonus
+    
+    def get_dodge_chance(self):
+        """获取闪避几率"""
+        chance = 0.0
+        
+        for relic in self.relics:
+            effect = relic.get('effect', {})
+            if effect.get('type') == 'dodge_chance':
+                chance += effect.get('value', 0)
+        
+        return min(chance, 1.0)  # 最高100%
+    
+    def get_double_attack_chance(self):
+        """获取先攻（连击）几率"""
+        chance = 0.0
+        
+        for relic in self.relics:
+            effect = relic.get('effect', {})
+            if effect.get('type') == 'double_attack_chance':
+                chance += effect.get('value', 0)
+        
+        return min(chance, 1.0)
+    
+    def apply_deathrattle_double(self, unit):
+        """应用亡语双倍效果"""
+        log = []
+        
+        for relic in self.relics:
+            effect = relic.get('effect', {})
+            if effect.get('type') == 'deathrattle_double':
+                # 触发两次亡语
+                if 'script' in unit and 'deathrattle' in unit['script']:
+                    log.append(f"{relic['name']}: {unit['name']} 的亡语触发两次！")
+                    # 实际触发逻辑需要在战斗引擎中处理
+        
+        return log
+    
+    def get_relic_display(self):
+        """获取宝物显示信息"""
+        if not self.relics:
+            return "没有携带宝物"
+        
+        display = ["=== 携带的宝物 ==="]
+        for i, relic in enumerate(self.relics):
+            display.append(f"{i}. {relic['name']} ({relic['rarity']})")
+            display.append(f"   {relic['description']}")
+        
+        return "\n".join(display)
+
+
+class RelicManager:
+    """宝物管理器 - 用于处理宝物的获取和使用"""
+    
+    def __init__(self, data_loader):
+        self.data_loader = data_loader
+        self.relic_system = RelicSystem(data_loader)
+    
+    def discover_relic(self, rarity=None):
+        """
+        发现一个随机宝物
+        rarity: 稀有度过滤（None表示所有）
+        返回: 宝物数据
+        """
+        reics_data = self.relic_system.relics_data
+        
+        if not reics_data:
+            return None
+        
+        # 过滤稀有度
+        if rarity:
+            available = [r for r in reics_data if r['rarity'] == rarity]
+        else:
+            available = reics_data
+        
+        if not available:
+            return None
+        
+        return random.choice(available).copy()
+    
+    def award_relic(self, relic=None, rarity=None):
+        """
+        奖励宝物
+        relic: 指定宝物（None表示随机）
+        rarity: 稀有度（当relic为None时有效）
+        返回: (成功?, 消息)
+        """
+        if not relic:
+            relic = self.discover_relic(rarity)
+        
+        if not relic:
+            return False, "没有可用的宝物"
+        
+        return self.relic_system.add_relic(relic)
+
+
+def cli_relic_interface(relic_manager):
+    """命令行宝物界面"""
+    print("=== 宝物系统 ===")
+    
+    while True:
+        print(f"\n{relic_manager.relic_system.get_relic_display()}")
+        print("\n操作:")
+        print("1. 获取随机宝物")
+        print("2. 移除宝物")
+        print("3. 查看效果")
+        print("q. 退出")
+        
+        choice = input("选择: ").strip()
+        
+        if choice.lower() == 'q':
+            break
+        
+        elif choice == '1':
+            success, msg = relic_manager.award_relic()
+            print(msg)
+        
+        elif choice == '2':
+            index = input("输入要移除的宝物索引: ").strip()
+            try:
+                idx = int(index)
+                success, msg = relic_manager.relic_system.remove_relic(idx)
+                print(msg)
+            except ValueError:
+                print("无效输入！")
+        
+        elif choice == '3':
+            effects = relic_manager.relic_system.get_combined_effects()
+            print("\n=== 组合效果 ===")
+            for effect_type, value in effects.items():
+                print(f"{effect_type}: {value}")
+        
+        else:
+            print("无效选择！")
+    
+    return relic_manager.relic_system
+
+
+# 测试代码
+if __name__ == '__main__':
+    # 模拟数据加载器
+    def mock_data_loader(filename):
+        if filename == 'relics.json':
+            return [
+                {
+                    "id": "test_amulet",
+                    "name": "测试护符",
+                    "description": "每回合恢复 2 点生命值",
+                    "rarity": "common",
+                    "effect": {
+                        "type": "heal_per_turn",
+                        "value": 2
+                    }
+                }
+            ]
+        return []
+    
+    # 创建宝物系统
+    relic_system = RelicSystem(mock_data_loader)
+    
+    # 测试添加宝物
+    success, msg = relic_system.add_relic('test_amulet')
+    print(msg)
+    
+    # 显示宝物
+    print(relic_system.get_relic_display())
+    
+    print("\n宝物系统模块加载成功！")
