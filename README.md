@@ -113,3 +113,11 @@ TavernRogue/
 
 本游戏使用 D&D SRD 5.1 中的开放游戏内容，遵循 OGL 许可。
 所有名称均为 SRD 中的通用概念，文字描述、美术资源、代码实现均为原创。
+
+## 规则内核接入判定（R2 · 2026-08-27）
+
+勘查结论：本作战斗为百分比判定（闪避/暴击几率）与区间随机，英雄属性为自研
+roguelite 数值体系——alloy.trpg（D&D 三宝书 + GURPS Basic Set）无同构原语可接；
+按「只接同构原语、绝不破坏行为契约」原则**不接入**（记账声明）。
+将来若引入 d20/3d6 检定：`from alloy.trpg import roll_3d6, gurps_success_chance`
+（接入模式参照 running-group-simulator 的 `core/dice.py`）。
