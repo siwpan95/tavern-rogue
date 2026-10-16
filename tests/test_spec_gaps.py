@@ -158,8 +158,6 @@ def test_help_pages_cover_core_systems():
 
 
 def test_help_scene_renders():
-    import pygame
-
     from ui.app import TavernRogueApp
 
     app = TavernRogueApp()
@@ -169,4 +167,3 @@ def test_help_scene_renders():
     assert app.scenes.current.__class__.__name__ == "HelpScene"
     app.scenes.switch_to("help", page=99)  # 越界页码要被夹住
     app.scenes.draw()
-    pygame.quit()

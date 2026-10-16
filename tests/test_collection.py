@@ -67,3 +67,65 @@ def test_game_manager_totals_match_data(tmp_path):
     assert totals["relics"] == len(game.load_data("relics.json"))
     assert totals["enemies"] == len(game.load_data("enemies.json"))
     assert totals["events"] == len(game.load_data("events.json"))
+
+
+# ─── 图鉴场景（表现层：条目网格 + 剪影 + 翻页）─────────────
+
+def make_scene(tmp_path, tab="relics", page=0, discovered=()):
+    from ui.app import TavernRogueApp
+
+    app = TavernRogueApp()
+    app.game.new_game("warrior")
+    if discovered:
+        app.game.mark_collection(tab, list(discovered))
+    app.scenes.switch_to("collection", tab=tab, page=page)
+    return app
+
+
+def test_codex_lists_entries_for_every_tab(tmp_path):
+    app = make_scene(tmp_path, tab="relics")
+    scene = app.scenes.current
+    assert len(scene._entries) == len(app.game.load_data("relics.json"))
+    assert scene._page_count >= 1
+    assert all(entry["id"] and entry["name"] for entry in scene._entries)
+
+    app.scenes.switch_to("collection", tab="enemies")
+    assert len(app.scenes.current._entries) == len(app.game.load_data("enemies.json"))
+    app.scenes.switch_to("collection", tab="events")
+    assert len(app.scenes.current._entries) == len(app.game.load_data("events.json"))
+
+
+def test_codex_page_is_clamped(tmp_path):
+    app = make_scene(tmp_path, tab="relics", page=99)
+    scene = app.scenes.current
+    assert scene._page == scene._page_count - 1
+    assert scene._page_entries(), "夹住后的页面必须有条目（不能画空页）"
+
+
+def test_codex_unknown_tab_falls_back(tmp_path):
+    app = make_scene(tmp_path, tab="dragons")
+    assert app.scenes.current._tab == "relics"
+
+
+def test_codex_entries_carry_category_hints(tmp_path):
+    app = make_scene(tmp_path, tab="enemies")
+    extras = {entry["extra"] for entry in app.scenes.current._entries}
+    assert extras & {"Boss", "精英"}, "敌人条目要标出 Boss/精英：%s" % extras
+    app.scenes.switch_to("collection", tab="relics")
+    rarities = {entry["extra"] for entry in app.scenes.current._entries}
+    assert rarities <= {"常见", "稀有", "史诗"}, rarities
+
+
+def test_codex_locked_entries_have_a_hint(tmp_path):
+    from ui.scenes.collection_scene import LOCK_HINTS, TABS
+
+    for tab in TABS:
+        assert LOCK_HINTS.get(tab), "%s 缺少未发现时的线索文案" % tab
+
+
+def test_codex_draws_with_and_without_discoveries(tmp_path):
+    app = make_scene(tmp_path, tab="relics", discovered=["boots_of_speed"])
+    app.scenes.update(0.016)
+    app.scenes.draw()
+    assert app.scenes.current._collection.is_discovered("relics", "boots_of_speed")
+    # 注意：**不要**在这里 pygame.quit() —— 会关掉其它用例共享的 display

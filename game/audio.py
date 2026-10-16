@@ -25,11 +25,16 @@ SCENE_BGM = {
     "recruit": "tavern.wav",
     "map": "dungeon.wav",
     "battle": "battle_low.wav",
+    # Boss 战专属：battle.py 一直在调 play_bgm('boss_fight')，但这里曾漏登记
+    # → 代码"以为"切了歌，实际静默无操作（2026-10-16 由音频契约审计发现）
+    "boss_fight": "boss_fight.wav",
     "shop": "merchant.wav",
     "camp": "campfire.wav",
     "event": "event.wav",
     "treasure": "dungeon.wav",
     "reward": "menu.wav",
+    "collection": "menu.wav",   # 图鉴/帮助属于菜单家族（契约测试发现它们此前没配）
+    "help": "menu.wav",
     "game_over": "game_over.wav",
     "victory": "credits.wav",
 }

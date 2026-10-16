@@ -119,6 +119,7 @@ class GameManager:
         self._run_class_id = hero_class
         self._run_victory = False
         self._boss_defeated = False
+        self.defeated_boss_name = ""
         self.mutators = parse_mutators(mutators) if mutators else []
         self.mutator_mods = build_mods(self.mutators)
         self.seed = int(seed) if seed is not None else random.randrange(1, 1_000_000_000)
@@ -546,7 +547,7 @@ class GameManager:
             scaled.append(copy)
         return scaled
 
-    def record_battle(self, result: str, node_type: str = None):
+    def record_battle(self, result: str, node_type: str = None, enemies=None):
         """记录一场战斗结果（结算屏、冒险日志与统计用）。"""
         stats = getattr(self, 'run_stats', None)
         if stats is None:
@@ -558,6 +559,10 @@ class GameManager:
             stats['elites'] += 1
         elif node_type == 'boss' and result == 'ally':
             stats['bosses'] += 1
+            # 记下打的是哪个 Boss（通关过场要写出名字）
+            names = [e.get('name') for e in (enemies or []) if isinstance(e, dict) and e.get('name')]
+            if names:
+                self.defeated_boss_name = names[0]
         # 伤害统计（最高伤害 = 冒险日志的一项）
         damage = int(getattr(self.battle_engine, 'last_battle_damage', 0) or 0)
         stats['damage_total'] = stats.get('damage_total', 0) + damage
