@@ -101,5 +101,5 @@ class ClassSelectScene(Scene):
         if cls_info and cls_info.get('locked', False):
             return
         self.gm.clear_saved_run()  # 开新局就清掉旧存档，避免「继续冒险」读到上一局
-        self.gm.new_game(hero_class)
+        self.gm.new_game(hero_class, seed=getattr(self.app, 'seed', None))
         self.switch_to('recruit')

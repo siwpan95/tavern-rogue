@@ -366,6 +366,7 @@ class BattleScene(Scene):
 
     def _set_battle_result(self, result):
         """设置战斗结算阶段"""
+        self.gm.record_battle(result, (self._node or {}).get('type'))
         if result == 'ally':
             self.phase = 'victory'
             self.messages.append("=== 战斗胜利！ ===")

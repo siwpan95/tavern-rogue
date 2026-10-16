@@ -152,6 +152,34 @@ def test_adventurer_tier_coverage(game_data):
     assert tiers == set(range(1, 7)), "冒险者星级覆盖不全: %s" % sorted(tiers)
 
 
+def test_every_tribe_has_two_units_per_tier(game_data):
+    """每个种族在每个星级至少 2 个单位 —— 否则玩家凑不出 2/4/6 档共鸣。
+
+    这是 2026-10-16 内容补洞的验收判据（矮人/龙裔的 2/4/6 星、半兽人/提夫林的 1/3/5 星
+    原本各只有 1 个，共鸣只能靠运气凑）。
+    """
+    counts = {}
+    for adv in game_data["adventurers"]:
+        counts[(adv["tribe"], adv["tier"])] = counts.get((adv["tribe"], adv["tier"]), 0) + 1
+    thin = sorted(key for key, value in counts.items() if value < 2)
+    assert not thin, "以下 种族×星级 少于 2 个单位：%s" % thin
+
+
+def test_every_keyword_has_enough_carriers(game_data):
+    """关键词至少 4 个承载单位，才值得作为一个"名词"存在（Brode 判据）。
+
+    低于 4 个的关键词玩家一辈子见不到几次，等于白占一个词表位。
+    """
+    import collections
+
+    carriers = collections.Counter()
+    for adv in game_data["adventurers"]:
+        for keyword in set(adv.get("keywords", [])):
+            carriers[keyword] += 1
+    thin = sorted(keyword for keyword, count in carriers.items() if count < 4)
+    assert not thin, "以下关键词的承载单位少于 4 个：%s（计数：%s）" % (thin, dict(carriers))
+
+
 @pytest.mark.parametrize("tribe", sorted(KNOWN_TRIBES))
 def test_every_tribe_has_mid_tier_units(game_data, tribe):
     units = [a for a in game_data["adventurers"] if a["tribe"] == tribe]

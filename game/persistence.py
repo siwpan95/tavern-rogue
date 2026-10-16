@@ -50,7 +50,8 @@ class ProgressManager:
             'best_records': {},  # class_id: {'floor': int, 'victory': bool, 'date': str}
             'total_runs': 0,
             'victories': 0,
-            'run_history': [],  # 最近 20 条记录
+            'run_history': [],  # 最近 20 条记录（含 stats/seed）
+            'totals': {},       # 累计统计（战斗数/精英数/铸币…）
             'achievements': []
         }
 
@@ -133,8 +134,9 @@ class ProgressManager:
             return True
         return False
 
-    def record_run(self, class_id: str, victory: bool, floor: int, relics: list = None):
-        """记录一局结果"""
+    def record_run(self, class_id: str, victory: bool, floor: int, relics: list = None,
+                   stats: dict = None, seed: int = None):
+        """记录一局结果（含本局统计与种子；未通关也计入总局数与累计统计）"""
         self.data['total_runs'] += 1
         if victory:
             self.data['victories'] += 1
@@ -144,10 +146,18 @@ class ProgressManager:
             'victory': victory,
             'floor': floor,
             'date': datetime.now().strftime('%Y-%m-%d %H:%M'),
-            'relics': relics or []
+            'relics': relics or [],
+            'stats': stats or {},
+            'seed': seed,
         }
         self.data['run_history'].append(record)
         self.data['run_history'] = self.data['run_history'][-20:]
+
+        # 累计统计（用于统计面板与失败屏的"你没白打"）
+        totals = self.data.setdefault('totals', {})
+        for key, value in (stats or {}).items():
+            if isinstance(value, (int, float)):
+                totals[key] = totals.get(key, 0) + value
 
         # 更新最佳记录
         best = self.data['best_records'].get(class_id, {})

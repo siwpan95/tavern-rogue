@@ -112,21 +112,53 @@ TavernRogue/
 
 ## 已实现功能
 
-- [x] 核心战斗引擎（守卫、力场护盾、亡者遗赠、连击等关键词）
+- [x] 核心战斗引擎（守卫、力场护盾、亡者遗赠、连击、剧毒、闪避、横扫、过杀、血怒等 12 个关键词）
 - [x] 英雄职业系统（5 个职业及技能）
-- [x] 酒馆招募系统（购买、刷新、三连合成）
-- [x] 地图生成系统（9 层地图，多种节点类型）
-- [x] 宝物系统（7 种魔法物品）
-- [x] 事件系统（随机事件）
+- [x] 酒馆招募系统（购买、刷新、三连合成、术士生命分流）
+- [x] 地图生成系统（9 层地图、层变体、精英/Boss 词缀、遭遇规模随层数成长）
+- [x] 宝物系统（29 件魔法物品，效果全部接线）
+- [x] 事件系统（26 个事件，21 种效果全部有实现，同局不重复）
 - [x] 奖励系统（战斗奖励、发现机制）
 - [x] pygame-ce 图形界面（12 个场景完整实现）
 - [x] 铸币经济（回合收入、携带上限）
 - [x] 营地训练（永久属性强化）
+- [x] 局外成长（职业解锁链、进阶 0-5、战绩与累计统计）
+- [x] 局内存档（继续冒险，基于自研引擎 SaveLoadManager）
+- [x] 音频（bloodmusic 离线生成的 38 音效 + 10 BGM，缺失静音降级）
+- [x] 固定种子（`python run_gui.py --seed 12345`，结算屏显示种子）
+- [x] 自动化验证（pytest 套件 + `tools/balance_report.py` 平衡对拍）
+
+## 内容设计稿与平衡报告
+
+- [`docs/内容设计稿-优先级.md`](docs/内容设计稿-优先级.md) —— 按**重复可玩性边际收益**排序的设计稿（含已落地/待办两档与验收阈值）
+- [`docs/balance-report.md`](docs/balance-report.md) —— 200 局批量模拟结果（含目标选择 A/B 对照）
 
 ## 法律声明
 
-本游戏使用 D&D SRD 5.1 中的开放游戏内容，遵循 OGL 许可。
-所有名称均为 SRD 中的通用概念，文字描述、美术资源、代码实现均为原创。
+本游戏使用 D&D SRD 5.1 中的开放游戏内容。SRD 5.1 由 Wizards of the Coast LLC 以
+**Creative Commons Attribution 4.0 International（CC-BY-4.0）** 授权（2023 年 1 月起；
+OGL 1.0a 亦仍可用，但官方推荐改用 CC-BY-4.0 署名）。本仓此前写的「遵循 OGL 许可」为过期表述，
+于 2026-10-16 按官方许可页订正。
+
+> This work includes material taken from the System Reference Document 5.1 ("SRD 5.1")
+> by Wizards of the Coast LLC and available at
+> https://dnd.wizards.com/resources/systems-reference-document.
+> The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License
+> available at https://creativecommons.org/licenses/by/4.0/legalcode.
+
+所有名称均为 SRD 中的通用概念；文字描述、美术资源、代码实现均为原创，
+与 Wizards of the Coast 不存在隶属或背书关系。
+
+## 自研引擎接入（记账 · SPEC-201）
+
+| 引擎（PyPI: siwpan） | 判定 | 接了什么 | 为什么不接更多 |
+| --- | --- | --- | --- |
+| `allin-engine` | ✅ 运行时依赖 | 决策树（战斗目标选择）、WorldLog（战斗审计旁路）、SaveLoadManager（局内存档） | 不接 ECS 重写 / 卡牌战斗 / trpg 骰系：会破坏百分比战斗与 `battle.py` 的中文日志解析契约 |
+| `bloodmusic` | ✅ 构建期依赖 | `tools/gen_audio_assets.py` 离线生成 38 音效 + 10 BGM；运行时只用 pygame.mixer 播放 | 不做运行时实时合成：会引入 numpy/scipy（约 140 MB）与 5 秒级冷启动 |
+| `3dworld` | ❌ 不接入（记账） | — | 需 OpenGL + 显示设备；硬钉 `pyglet==2.1.16`（与本机 pyglet 1.5.31 冲突）；Windows 无 headless 记录；对 2D 自走棋无同构收益 |
+
+**降级保证**：两个引擎缺失时都会**出声降级**（stderr 提示 + 仓内等价实现），游戏仍可正常运行；
+`requirements.txt` 只装运行时依赖，`requirements-assets.txt` 才是音频生成依赖。
 
 ## 规则内核接入判定（R2 · 2026-08-27）
 

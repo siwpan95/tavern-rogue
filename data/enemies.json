@@ -536,5 +536,146 @@
     "reward_gold": 15,
     "initiative": 6,
     "max_health": 12
+  },
+  {
+    "id": "giant_rat_swarm",
+    "name": "巨鼠群",
+    "tier": 1,
+    "attack": 2,
+    "health": 4,
+    "keywords": [],
+    "script": {},
+    "reward_gold": 3,
+    "initiative": 13,
+    "max_health": 4
+  },
+  {
+    "id": "kobold_trapper",
+    "name": "狗头人陷阱手",
+    "tier": 1,
+    "attack": 2,
+    "health": 2,
+    "keywords": [
+      "DODGE"
+    ],
+    "script": {},
+    "reward_gold": 4,
+    "initiative": 12,
+    "max_health": 2
+  },
+  {
+    "id": "gnoll_packleader",
+    "name": "豺狼人首领",
+    "tier": 3,
+    "attack": 4,
+    "health": 6,
+    "keywords": [
+      "FRENZY",
+      "CLEAVE"
+    ],
+    "script": {},
+    "reward_gold": 11,
+    "is_elite": true,
+    "initiative": 9,
+    "max_health": 6
+  },
+  {
+    "id": "wraith_captain",
+    "name": "幽魂队长",
+    "tier": 4,
+    "attack": 5,
+    "health": 6,
+    "keywords": [
+      "DODGE",
+      "POISON",
+      "REGENERATION"
+    ],
+    "script": {},
+    "reward_gold": 14,
+    "is_elite": true,
+    "initiative": 12,
+    "max_health": 6
+  },
+  {
+    "id": "beholder_kin",
+    "name": "眼魔亚种",
+    "tier": 5,
+    "attack": 6,
+    "health": 11,
+    "keywords": [
+      "GUARD",
+      "ARMOR"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "damage_all",
+        "value": 2
+      }
+    },
+    "reward_gold": 16,
+    "is_elite": true,
+    "initiative": 7,
+    "max_health": 11
+  },
+  {
+    "id": "lich_acolyte",
+    "name": "巫妖门徒",
+    "tier": 5,
+    "attack": 7,
+    "health": 9,
+    "keywords": [
+      "SHIELD",
+      "FIRE_BREATH"
+    ],
+    "script": {
+      "deathrattle": {
+        "type": "summon",
+        "summon_id": "skeleton_mage",
+        "count": 1
+      }
+    },
+    "reward_gold": 18,
+    "is_elite": true,
+    "initiative": 10,
+    "max_health": 9
+  },
+  {
+    "id": "demon_prince",
+    "name": "恶魔王子",
+    "tier": 6,
+    "attack": 9,
+    "health": 20,
+    "keywords": [
+      "GUARD",
+      "BLOOD_FURY",
+      "FIRE_BREATH"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "damage_all",
+        "value": 3
+      }
+    },
+    "reward_gold": 20,
+    "is_boss": true,
+    "initiative": 10,
+    "max_health": 20
+  },
+  {
+    "id": "titan_of_ash",
+    "name": "灰烬泰坦",
+    "tier": 6,
+    "attack": 8,
+    "health": 24,
+    "keywords": [
+      "ARMOR",
+      "REGENERATION",
+      "CLEAVE"
+    ],
+    "script": {},
+    "reward_gold": 20,
+    "is_boss": true,
+    "initiative": 6,
+    "max_health": 24
   }
 ]

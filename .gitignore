@@ -19,5 +19,5 @@ assets/audio/
 sfx_output/
 game_sfx/
 
-# 注意：third_party/ 里的自研 AI 后端**必须入库** ——
-# game/ai_content.py 依赖它，忽略它会让干净克隆直接 ModuleNotFoundError（2026-10-16 实测并修复）。
+# 第三方源码副本（自研 AI 后端不在此列 —— 它在 game/ai_backend/，必须入库）
+third_party/

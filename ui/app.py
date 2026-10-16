@@ -27,7 +27,8 @@ from game.persistence import ProgressManager
 class TavernRogueApp:
     """精简的应用外壳 — 仅负责 pygame 初始化 + 主循环"""
 
-    def __init__(self):
+    def __init__(self, seed=None):
+        self.seed = seed  # 显式种子（None = 每局随机），由职业选择场景带进 new_game
         pygame.init()
         fonts.ensure_init()  # 必须在 pygame.init() 之后
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -95,8 +96,8 @@ class TavernRogueApp:
         pygame.quit()
 
 
-def main():
-    app = TavernRogueApp()
+def main(seed=None):
+    app = TavernRogueApp(seed=seed)
     app.run()
     sys.exit()
 

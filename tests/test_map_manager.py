@@ -62,13 +62,61 @@ def test_fixed_layers_keep_their_declared_type(data_loader):
 
 
 def test_random_layer_only_uses_declared_types(data_loader):
+    """随机层只能用**本局抽中的那种层变体**里声明的节点类型。"""
     manager = MapManager(data_loader)
     data = manager.generate_map()
-    declared = {layer["layer"]: set(layer.get("possible_types", []))
-                for layer in manager.map_templates["layers"] if layer["type"] == "random"}
     for layer in data["layers"]:
-        allowed = declared.get(layer["layer"])
+        allowed = layer.get("possible_types")
         if not allowed:
             continue
         for node in layer["nodes"]:
             assert node["type"] in allowed, "%s 出现未声明的节点类型 %s" % (layer["name"], node["type"])
+
+
+def test_layer_variants_come_from_template(data_loader):
+    manager = MapManager(data_loader)
+    data = manager.generate_map()
+    variants = manager.map_templates.get("layer_variants") or {}
+    for layer in data["layers"]:
+        declared = variants.get(str(layer["layer"]))
+        if not declared:
+            continue
+        assert layer["possible_types"] in declared, \
+            "第 %d 层的节点组合必须来自 layer_variants" % layer["layer"]
+
+
+def test_elite_affixes_start_at_layer_five(data_loader):
+    manager = MapManager(data_loader)
+    manager.map_data = manager.generate_map()
+    early = manager._generate_node_content(make_node(3, "elite"))
+    assert early["affixes"] == [], "前期精英不该带词缀"
+
+    late = manager._generate_node_content(make_node(7, "elite"))
+    assert late["affixes"], "第 5 层起精英必须带词缀"
+    enemy = late["enemies"][0]
+    assert any(keyword in enemy.get("keywords", [])
+               for keyword in ("FRENZY", "ARMOR", "POISON", "DODGE", "REGENERATION")), enemy
+
+
+def test_boss_takes_two_affixes_and_advancement_adds_one(data_loader):
+    manager = MapManager(data_loader)
+    manager.map_data = manager.generate_map()
+    content = manager._generate_node_content(make_node(8, "boss"))
+    assert len(content["affixes"]) == 2
+    assert content["enemies"][0]["id"] == "ancient_red_dragon"
+
+    manager.affix_bonus = 1  # 进阶≥3
+    boosted = manager._generate_node_content(make_node(8, "boss"))
+    assert len(boosted["affixes"]) == 3
+
+
+def test_affix_boosts_stats(data_loader):
+    manager = MapManager(data_loader)
+    manager.map_data = manager.generate_map()
+    base = manager._generate_node_content(make_node(7, "elite"))["enemies"][0]
+    manager.map_templates = dict(manager.map_templates)
+    manager.map_templates["affixes"] = [
+        {"id": "giant", "name": "巨型", "keywords": [], "health_mult": 2.0, "attack_mult": 1.0}]
+    boosted = manager._generate_node_content(make_node(7, "elite"))["enemies"][0]
+    assert boosted["health"] > base["health"]
+    assert "巨型" in boosted["name"]

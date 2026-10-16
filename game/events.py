@@ -44,7 +44,8 @@ class EventSystem:
                           if e['id'] not in self.event_history]
         
         if not available_events:
-            # 如果所有事件都经历过了，重置历史
+            # 事件池抽干了才重置 —— 出声（否则玩家/开发者都看不出"这一局开始重复了"）
+            print("[TavernRogue] 事件池已抽完 %d 个事件，重置后可重复抽取" % len(self.events_data))
             self.event_history.clear()
             available_events = self.events_data
         

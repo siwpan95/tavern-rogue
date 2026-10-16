@@ -91,11 +91,22 @@ class GameManager:
 
     # ─── 游戏生命周期 ───────────────────────────────
 
-    def new_game(self, hero_class: str):
-        """开始新游戏，应用当前职业进阶难度参数"""
+    def new_game(self, hero_class: str, seed: int = None):
+        """开始新游戏，应用当前职业进阶难度参数。
+
+        seed 只在显式传入时用于播种（便于复现与分享）；不传则只记录一个随机种子到本局，
+        避免影响其它调用方的随机序列。
+        """
         self._run_class_id = hero_class
         self._run_victory = False
         self._boss_defeated = False
+        self.seed = int(seed) if seed is not None else random.randrange(1, 1_000_000_000)
+        if seed is not None:
+            random.seed(self.seed)
+        self.run_stats = {
+            'battles': 0, 'battle_wins': 0, 'elites': 0, 'bosses': 0,
+            'events': 0, 'relics_gained': 0, 'gold_earned': 0,
+        }
         self.hero = create_hero(hero_class)
         self.difficulty_params = self.progress.get_difficulty_params(hero_class)
         # 进阶提供英雄额外生命值
@@ -123,6 +134,9 @@ class GameManager:
         self.battle_engine = BattleEngine(log_callback=print, data_loader=data_loader)
         self.recruit_system = RecruitSystem(self.hero, data_loader)
         self.map_manager = MapManager(data_loader)
+        # 进阶≥3 起，精英/Boss 多带一条词缀（内容复用：同敌人 × 不同词缀 = 新遭遇）
+        advancement = self.progress.get_class_advancement(self._run_class_id or '')
+        self.map_manager.affix_bonus = 1 if advancement >= 3 else 0
         self.event_system = EventSystem(data_loader, ai_generator=ai_generator)
         self.relic_system = RelicSystem(data_loader)
         self.reward_system = RewardSystem(data_loader, self.relic_system)
@@ -404,8 +418,47 @@ class GameManager:
             scaled.append(copy)
         return scaled
 
+    def record_battle(self, result: str, node_type: str = None):
+        """记录一场战斗结果（结算屏与统计用）。"""
+        stats = getattr(self, 'run_stats', None)
+        if stats is None:
+            return
+        stats['battles'] += 1
+        if result == 'ally':
+            stats['battle_wins'] += 1
+        if node_type == 'elite':
+            stats['elites'] += 1
+        elif node_type == 'boss' and result == 'ally':
+            stats['bosses'] += 1
+
+    def run_summary_lines(self) -> list:
+        """结算屏文案：结果 / 统计 / 个人最佳 / 下一目标。"""
+        stats = getattr(self, 'run_stats', {}) or {}
+        best = self.progress.data.get('best_records', {}).get(self._run_class_id or '', {})
+        lines = [
+            "第 %d 层 · 战斗 %d 场（胜 %d）· 精英 %d · Boss %d" % (
+                self.floor, stats.get('battles', 0), stats.get('battle_wins', 0),
+                stats.get('elites', 0), stats.get('bosses', 0)),
+            "宝物 %d 件 · 铸币 %d · 种子 %s" % (len(self.relics), self.gold, self.seed),
+            "个人最佳：%s" % ("通关" if best.get('victory') else "第 %d 层" % best.get('floor', 0)
+                            if best else "暂无记录"),
+            "总局数 %d · 通关 %d 次" % (self.progress.data.get('total_runs', 0),
+                                      self.progress.data.get('victories', 0)),
+        ]
+        lines.append(self.next_goal_hint())
+        return lines
+
+    def next_goal_hint(self) -> str:
+        """给玩家一个具体、可执行的下一目标（失败屏必须解释"下一步做什么"）。"""
+        advancement = self.progress.get_class_advancement(self._run_class_id or '')
+        if self.is_victory():
+            return "下一目标：用「%s」挑战进阶 %d" % (self.hero.name, min(advancement + 1, 5))
+        if self.floor >= self.MAX_FLOORS - 1:
+            return "下一目标：击败第 %d 层的最终 Boss" % self.MAX_FLOORS
+        return "下一目标：突破第 %d 层（本局止步第 %d 层）" % (self.floor + 1, self.floor)
+
     def record_run(self, victory: bool, floor: int = None):
-        """记录本局结果到局外成长"""
+        """记录本局结果到局外成长（含本局统计与种子，供统计面板/复盘使用）"""
         if not self._run_class_id:
             return
         self._run_victory = victory
@@ -414,7 +467,9 @@ class GameManager:
             self._run_class_id,
             victory,
             floor or self.floor,
-            relic_ids
+            relic_ids,
+            stats=dict(getattr(self, 'run_stats', {}) or {}),
+            seed=getattr(self, 'seed', None),
         )
 
     def is_victory(self) -> bool:

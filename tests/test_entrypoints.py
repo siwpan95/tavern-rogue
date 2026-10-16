@@ -56,16 +56,16 @@ def test_pytest_is_installed_and_collectable():
 # ─── 干净克隆可运行性 ──────────────────────────────────────
 
 def test_ai_backend_import_is_optional(monkeypatch):
-    """模拟干净克隆：third_party 不可用时，导入仍必须成功且**出声**降级。"""
+    """模拟干净克隆：AI 后端不可用时，导入仍必须成功且**出声**降级。"""
     real_import = builtins.__import__
 
     def blocked_import(name, *args, **kwargs):
-        if name == "third_party" or name.startswith("third_party."):
-            raise ModuleNotFoundError("simulated fresh clone without third_party")
+        if name == "game.ai_backend" or name.startswith("game.ai_backend."):
+            raise ModuleNotFoundError("simulated fresh clone without game.ai_backend")
         return real_import(name, *args, **kwargs)
 
     for module_name in list(sys.modules):
-        if module_name.startswith(("game.ai_content", "third_party")):
+        if module_name.startswith(("game.ai_content", "game.ai_backend")):
             del sys.modules[module_name]
 
     monkeypatch.setattr(builtins, "__import__", blocked_import)
@@ -77,15 +77,15 @@ def test_ai_backend_import_is_optional(monkeypatch):
 
 
 def test_vendored_ai_backend_is_tracked(repo_root):
-    """third_party 里的 AI 后端必须入库，否则干净克隆跑不起来。"""
+    """自研 AI 后端必须入库，否则干净克隆跑不起来。"""
     result = subprocess.run(
-        ["git", "-C", str(repo_root), "ls-files", "third_party"],
+        ["git", "-C", str(repo_root), "ls-files", "game/ai_backend"],
         capture_output=True, text=True, encoding="utf-8", check=False,
     )
     if result.returncode != 0:
         pytest.skip("git 不可用，跳过入库面检查")
     tracked = result.stdout.split()
-    assert "third_party/ollama_generator/core.py" in tracked, tracked
+    assert "game/ai_backend/core.py" in tracked, tracked
 
 
 def test_all_first_party_modules_import():

@@ -72,8 +72,13 @@ class MapManager:
         # → 九层全走随机分支 → 第 1 层不是营地、第 8 层最终 Boss 变成普通小怪、
         # 第 9 层宝藏密室不存在（2026-10-16 平衡对拍时发现）。
         if layer_type == 'random':
-            # 随机节点
-            possible_types = layer_info.get('possible_types', ['monster', 'event'])
+            # 随机节点：优先用层变体（同一层有多种节点组合，提升每局差异）
+            variants = (self.map_templates.get('layer_variants') or {}).get(str(layer_num))
+            if variants:
+                possible_types = random.choice(variants)
+            else:
+                possible_types = layer_info.get('possible_types', ['monster', 'event'])
+            layer['possible_types'] = list(possible_types)
             for i in range(node_count):
                 node_type = random.choice(possible_types)
                 node = self._create_node(node_type, layer_num, i)
@@ -164,10 +169,13 @@ class MapManager:
             }
         
         elif node_type == 'elite':
-            # 精英战斗
+            # 精英战斗（第 5 层起带词缀）
+            enemies = self._generate_enemies(node['layer'], 'elite')
+            affixes = self._apply_affixes(enemies, node['layer'])
             return {
                 'type': 'battle',
-                'enemies': self._generate_enemies(node['layer'], 'elite'),
+                'enemies': enemies,
+                'affixes': affixes,
                 'rewards': {
                     'gold': True,
                     'relic': True
@@ -186,9 +194,12 @@ class MapManager:
                 if not candidates:
                     candidates = [e for e in self.data_loader('enemies.json') if e.get('is_boss')]
                 boss = random.choice(candidates).copy()
+            enemies = [boss]
+            affixes = self._apply_affixes(enemies, node['layer'], count=2)
             return {
                 'type': 'battle',
-                'enemies': [boss],
+                'enemies': enemies,
+                'affixes': affixes,
                 'rewards': {
                     'gold': True,
                     'relic': True,
@@ -227,6 +238,8 @@ class MapManager:
         
         return None
     
+    AFFIX_MIN_LAYER = 5  # 第 5 层起精英/Boss 带词缀（前期不给玩家压力）
+
     @staticmethod
     def encounter_size(layer, difficulty='normal'):
         """遭遇规模随层数增长。
@@ -241,6 +254,35 @@ class MapManager:
         if difficulty == 'elite':
             return min(1 + (layer - 1) // 3, 3)
         return min(2 + (layer - 1) // 3, 4)
+
+    def _apply_affixes(self, enemies, layer, count=1):
+        """给精英/Boss 敌人叠词缀（狂暴/重甲/淬毒/疾行/巨型/不灭）。
+
+        内容复用技巧：同一批敌人 + 不同词缀 = 新遭遇，用组合数换重复可玩性。
+        `self.affix_bonus` 由进阶难度设置（进阶≥3 多一条词缀）。
+        """
+        pool = self.map_templates.get('affixes') or []
+        if not pool or not enemies or layer < self.AFFIX_MIN_LAYER:
+            return []
+        count = max(1, int(count) + int(getattr(self, 'affix_bonus', 0) or 0))
+        chosen = random.sample(pool, min(count, len(pool)))
+
+        for affix in chosen:
+            for enemy in enemies:
+                keywords = enemy.setdefault('keywords', [])
+                for keyword in affix.get('keywords', []):
+                    if keyword not in keywords:
+                        keywords.append(keyword)
+                health_mult = float(affix.get('health_mult', 1.0) or 1.0)
+                attack_mult = float(affix.get('attack_mult', 1.0) or 1.0)
+                enemy['health'] = max(1, int(round(enemy.get('health', 1) * health_mult)))
+                enemy['max_health'] = max(
+                    enemy['health'],
+                    int(round(enemy.get('max_health', enemy['health']) * health_mult)))
+                enemy['attack'] = max(1, int(round(enemy.get('attack', 1) * attack_mult)))
+                if len(chosen) == 1:
+                    enemy['name'] = "%s·%s" % (enemy.get('name', '敌人'), affix['name'])
+        return [affix['id'] for affix in chosen]
 
     def _generate_enemies(self, layer, difficulty='normal'):
         """生成敌人"""

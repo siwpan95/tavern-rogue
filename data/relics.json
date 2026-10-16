@@ -259,5 +259,46 @@
       "type": "global_dodge",
       "value": 0.05
     }
+  },
+  {
+    "id": "bloodstone_charm",
+    "name": "血石护符",
+    "rarity": "rare",
+    "description": "友军击杀敌人时恢复 2 点生命值。",
+    "effect": {
+      "type": "heal_on_kill",
+      "value": 2
+    }
+  },
+  {
+    "id": "battle_tempo_bell",
+    "name": "战鼓",
+    "rarity": "rare",
+    "description": "你的冒险者攻击时，有 15% 几率再次攻击。",
+    "effect": {
+      "type": "double_attack_chance",
+      "value": 0.15
+    }
+  },
+  {
+    "id": "thieves_tools",
+    "name": "盗贼工具",
+    "rarity": "common",
+    "description": "每场战斗后额外获得 2 铸币。",
+    "effect": {
+      "type": "extra_gold",
+      "value": 2
+    }
+  },
+  {
+    "id": "orb_of_dragons",
+    "name": "龙裔宝珠",
+    "rarity": "epic",
+    "description": "龙裔的火焰吐息与龙裔共鸣伤害 +2。",
+    "effect": {
+      "type": "tribe_fire_bonus",
+      "tribe": "dragonborn",
+      "value": 2
+    }
   }
 ]

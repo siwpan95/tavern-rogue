@@ -106,5 +106,21 @@
       "name": "宝藏密室",
       "description": "大量铸币和稀有宝物"
     }
-  }
+  },
+  "layer_variants": {
+    "2": [["monster", "elite", "event", "camp"], ["monster", "shop", "event"], ["monster", "monster", "camp"]],
+    "3": [["monster", "elite", "event", "shop"], ["monster", "monster", "shop"], ["elite", "event", "camp"]],
+    "4": [["monster", "elite", "event", "camp"], ["monster", "monster", "elite"], ["monster", "shop", "camp"]],
+    "5": [["monster", "elite", "event", "shop"], ["elite", "elite", "event"], ["monster", "monster", "shop"]],
+    "6": [["elite", "event"], ["elite", "elite"], ["elite", "shop"]],
+    "7": [["elite", "boss"], ["elite", "elite"], ["elite", "event"]]
+  },
+  "affixes": [
+    {"id": "frenzied", "name": "狂暴", "keywords": ["FRENZY"], "health_mult": 1.0, "attack_mult": 1.1},
+    {"id": "armored", "name": "重甲", "keywords": ["ARMOR"], "health_mult": 1.15, "attack_mult": 1.0},
+    {"id": "venomous", "name": "淬毒", "keywords": ["POISON"], "health_mult": 1.0, "attack_mult": 1.0},
+    {"id": "swift", "name": "疾行", "keywords": ["DODGE"], "health_mult": 1.0, "attack_mult": 1.05},
+    {"id": "giant", "name": "巨型", "keywords": [], "health_mult": 1.4, "attack_mult": 0.9},
+    {"id": "undying", "name": "不灭", "keywords": ["REGENERATION"], "health_mult": 1.2, "attack_mult": 0.95}
+  ]
 }

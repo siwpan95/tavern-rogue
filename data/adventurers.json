@@ -273,7 +273,8 @@
     "attack": 4,
     "health": 3,
     "keywords": [
-      "FRENZY"
+      "FRENZY",
+      "FLYING"
     ],
     "script": {
       "battle_cry": {
@@ -375,7 +376,8 @@
     "keywords": [
       "GUARD",
       "ARMOR",
-      "SHIELD"
+      "SHIELD",
+      "REGENERATION"
     ],
     "script": {},
     "cost": 6,
@@ -389,7 +391,9 @@
     "tier": 4,
     "attack": 5,
     "health": 4,
-    "keywords": [],
+    "keywords": [
+      "FIRE_BREATH"
+    ],
     "script": {
       "battle_cry": {
         "type": "damage_all",
@@ -527,7 +531,8 @@
     "attack": 9,
     "health": 4,
     "keywords": [
-      "FRENZY"
+      "FRENZY",
+      "OVERKILL"
     ],
     "script": {
       "deathrattle": {
@@ -596,7 +601,8 @@
     "keywords": [
       "DODGE",
       "POISON",
-      "FRENZY"
+      "FRENZY",
+      "REGENERATION"
     ],
     "script": {
       "battle_cry": {
@@ -638,7 +644,8 @@
     "attack": 8,
     "health": 7,
     "keywords": [
-      "FRENZY"
+      "FRENZY",
+      "FIRE_BREATH"
     ],
     "script": {
       "battle_cry": {
@@ -659,7 +666,8 @@
     "health": 5,
     "keywords": [
       "FRENZY",
-      "POISON"
+      "POISON",
+      "OVERKILL"
     ],
     "script": {
       "deathrattle": {
@@ -915,7 +923,8 @@
     "attack": 6,
     "health": 6,
     "keywords": [
-      "FRENZY"
+      "FRENZY",
+      "CLEAVE"
     ],
     "tribe": "half_orc",
     "script": {},
@@ -1087,5 +1096,217 @@
     "initiative": 12,
     "cost": 6,
     "max_health": 8
+  },
+  {
+    "id": "dwarf_ram_rider",
+    "name": "矮人冲撞手",
+    "tribe": "dwarf",
+    "tier": 2,
+    "attack": 3,
+    "health": 3,
+    "keywords": [
+      "CLEAVE"
+    ],
+    "script": {},
+    "cost": 4,
+    "initiative": 10,
+    "max_health": 3
+  },
+  {
+    "id": "dwarf_avenger",
+    "name": "矮人复仇者",
+    "tribe": "dwarf",
+    "tier": 4,
+    "attack": 4,
+    "health": 6,
+    "keywords": [
+      "GUARD",
+      "ARMOR",
+      "BLOOD_FURY"
+    ],
+    "script": {},
+    "cost": 6,
+    "initiative": 8,
+    "max_health": 6
+  },
+  {
+    "id": "dwarf_forge_lord",
+    "name": "矮人锻造之主",
+    "tribe": "dwarf",
+    "tier": 6,
+    "attack": 7,
+    "health": 14,
+    "keywords": [
+      "GUARD",
+      "ARMOR",
+      "REGENERATION"
+    ],
+    "script": {
+      "battle_cry": {
+        "type": "buff_all",
+        "stat": "attack",
+        "value": 1
+      }
+    },
+    "cost": 8,
+    "initiative": 6,
+    "max_health": 14
+  },
+  {
+    "id": "dragonborn_wingguard",
+    "name": "龙裔翼卫",
+    "tribe": "dragonborn",
+    "tier": 2,
+    "attack": 3,
+    "health": 2,
+    "keywords": [
+      "FLYING",
+      "DODGE"
+    ],
+    "script": {},
+    "cost": 4,
+    "initiative": 12,
+    "max_health": 2
+  },
+  {
+    "id": "dragonborn_scaled_priest",
+    "name": "龙裔鳞甲祭祀",
+    "tribe": "dragonborn",
+    "tier": 4,
+    "attack": 4,
+    "health": 6,
+    "keywords": [
+      "REGENERATION",
+      "GUARD"
+    ],
+    "script": {
+      "turn_start": {
+        "type": "heal_lowest",
+        "value": 2
+      }
+    },
+    "cost": 6,
+    "initiative": 9,
+    "max_health": 6
+  },
+  {
+    "id": "dragonborn_emberlord",
+    "name": "龙裔烬王",
+    "tribe": "dragonborn",
+    "tier": 6,
+    "attack": 8,
+    "health": 11,
+    "keywords": [
+      "FLYING",
+      "FIRE_BREATH",
+      "ARMOR"
+    ],
+    "script": {
+      "battle_cry": {
+        "type": "damage_all",
+        "value": 2
+      }
+    },
+    "cost": 8,
+    "initiative": 11,
+    "max_health": 11
+  },
+  {
+    "id": "half_orc_grunt",
+    "name": "半兽人步卒",
+    "tribe": "half_orc",
+    "tier": 1,
+    "attack": 2,
+    "health": 2,
+    "keywords": [
+      "CLEAVE"
+    ],
+    "script": {},
+    "cost": 3,
+    "initiative": 10,
+    "max_health": 2
+  },
+  {
+    "id": "half_orc_bloodletter",
+    "name": "半兽人放血者",
+    "tribe": "half_orc",
+    "tier": 3,
+    "attack": 5,
+    "health": 3,
+    "keywords": [
+      "BLOOD_FURY",
+      "POISON"
+    ],
+    "script": {},
+    "cost": 5,
+    "initiative": 12,
+    "max_health": 3
+  },
+  {
+    "id": "half_orc_ravager",
+    "name": "半兽人蹂躏者",
+    "tribe": "half_orc",
+    "tier": 5,
+    "attack": 7,
+    "health": 6,
+    "keywords": [
+      "CLEAVE",
+      "OVERKILL"
+    ],
+    "script": {},
+    "cost": 7,
+    "initiative": 9,
+    "max_health": 6
+  },
+  {
+    "id": "tiefling_imp",
+    "name": "提夫林小鬼",
+    "tribe": "tiefling",
+    "tier": 1,
+    "attack": 1,
+    "health": 2,
+    "keywords": [],
+    "script": {
+      "deathrattle": {
+        "type": "damage_random",
+        "value": 1
+      }
+    },
+    "cost": 3,
+    "initiative": 11,
+    "max_health": 2
+  },
+  {
+    "id": "tiefling_bloodpact",
+    "name": "提夫林血契者",
+    "tribe": "tiefling",
+    "tier": 3,
+    "attack": 4,
+    "health": 4,
+    "keywords": [
+      "BLOOD_FURY",
+      "OVERKILL"
+    ],
+    "script": {},
+    "cost": 5,
+    "initiative": 10,
+    "max_health": 4
+  },
+  {
+    "id": "tiefling_nightwing",
+    "name": "提夫林夜翼",
+    "tribe": "tiefling",
+    "tier": 5,
+    "attack": 6,
+    "health": 5,
+    "keywords": [
+      "FLYING",
+      "FIRE_BREATH",
+      "DODGE"
+    ],
+    "script": {},
+    "cost": 7,
+    "initiative": 13,
+    "max_health": 5
   }
 ]

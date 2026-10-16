@@ -590,5 +590,202 @@
         "outcome": "你决定不在危险的废墟中逗留。"
       }
     ]
+  },
+  {
+    "id": "cursed_idol",
+    "name": "受诅神像",
+    "description": "一尊黑曜石神像立在路中央，掌心托着一枚仍在跳动的宝石。",
+    "options": [
+      {
+        "text": "献祭一名冒险者",
+        "effects": {
+          "sacrifice_adventurer": true,
+          "gain_relic": {
+            "random": true
+          }
+        },
+        "outcome": "神像吞下了你的同伴，回赠一件散发寒气的宝物。"
+      },
+      {
+        "text": "砸碎神像",
+        "effects": {
+          "damage_all": 2,
+          "upgrade_board": {
+            "stat": "attack",
+            "value": 2
+          }
+        },
+        "outcome": "碎石划伤了所有人，但飞溅的碎屑淬炼了你们的武器。"
+      },
+      {
+        "text": "绕开它",
+        "effects": {},
+        "outcome": "你选择不去碰这尊神像。"
+      }
+    ]
+  },
+  {
+    "id": "dragon_hoard",
+    "name": "龙之宝藏",
+    "description": "一处被遗弃的龙巢，金币堆成小山——但母龙的低吼从深处传来。",
+    "options": [
+      {
+        "text": "拼命搬走金币（-6 生命）",
+        "effects": {
+          "gain_gold": 12,
+          "damage_hero": 6
+        },
+        "outcome": "你抱着金币冲出洞口，龙爪在你背上留下三道血痕。"
+      },
+      {
+        "text": "只取一件宝物",
+        "effects": {
+          "gain_relic": {
+            "random": true
+          }
+        },
+        "outcome": "你挑了一件最不起眼的宝物，悄悄退了出去。"
+      },
+      {
+        "text": "立刻离开",
+        "effects": {},
+        "outcome": "你决定不拿命去赌这堆金币。"
+      }
+    ]
+  },
+  {
+    "id": "fey_bargain",
+    "name": "妖精契约",
+    "description": "一个由花瓣与月光拼成的小人向你伸出手，另一只手指着你队伍里的某人。",
+    "options": [
+      {
+        "text": "用一名冒险者换一名更强的",
+        "effects": {
+          "sacrifice_adventurer": true,
+          "gain_adventurer": {
+            "tier": 4,
+            "random": true
+          }
+        },
+        "outcome": "花瓣散去，一位陌生的强者加入了你的队伍。"
+      },
+      {
+        "text": "只要情报",
+        "effects": {
+          "reveal_map": true
+        },
+        "outcome": "妖精笑着在空中画出你前方道路的轮廓。"
+      },
+      {
+        "text": "拒绝契约",
+        "effects": {},
+        "outcome": "妖精失望地化作花瓣散去。"
+      }
+    ]
+  },
+  {
+    "id": "arcane_forge",
+    "name": "秘法熔炉",
+    "description": "一座仍在燃烧的矮人熔炉，炉火呈现出不该有的蓝色。",
+    "options": [
+      {
+        "text": "重铸武器（6 铸币）",
+        "effects": {
+          "cost_gold": 6,
+          "upgrade_board": {
+            "stat": "attack",
+            "value": 3
+          }
+        },
+        "outcome": "全队的武器被重新锻打，刃口泛着幽蓝。"
+      },
+      {
+        "text": "附魔护甲（6 铸币）",
+        "effects": {
+          "cost_gold": 6,
+          "enchant_board": {
+            "keyword": "SHIELD",
+            "all": true
+          }
+        },
+        "outcome": "一层力场薄膜覆盖了所有人。"
+      },
+      {
+        "text": "拆掉熔炉卖铁",
+        "effects": {
+          "gain_gold": 5,
+          "lose_relic": 1
+        },
+        "outcome": "你拆下了熔炉的核心，卖了个好价钱。"
+      }
+    ]
+  },
+  {
+    "id": "plague_camp",
+    "name": "疫病营地",
+    "description": "一支商队在这里扎营后再没醒来，帐篷上爬满了青绿色的霉斑。",
+    "options": [
+      {
+        "text": "焚香净化",
+        "effects": {
+          "purify_board": true,
+          "heal": 6
+        },
+        "outcome": "浓烟散去，你和队伍都清爽了许多。"
+      },
+      {
+        "text": "搜刮遗物（-4 生命）",
+        "effects": {
+          "gain_relic": {
+            "random": true
+          },
+          "damage_hero": 4
+        },
+        "outcome": "你找到了值钱的东西，也染上了几处红肿。"
+      },
+      {
+        "text": "一把火烧了营地",
+        "effects": {
+          "regenerate_map": true
+        },
+        "outcome": "大火抹平了营地，前方的路也随之改变。"
+      }
+    ]
+  },
+  {
+    "id": "mercenary_captain",
+    "name": "佣兵队长",
+    "description": "一个满脸刀疤的女人挡在路口：\"要么雇我们，要么打一架。\"",
+    "options": [
+      {
+        "text": "雇佣精锐（8 铸币）",
+        "effects": {
+          "cost_gold": 8,
+          "gain_adventurer": {
+            "tier": 5,
+            "random": true
+          }
+        },
+        "outcome": "她挑了手下最能打的一个交给你。"
+      },
+      {
+        "text": "交换情报",
+        "effects": {
+          "reveal_map": true,
+          "gain_gold": 4
+        },
+        "outcome": "她把前方的布防图卖给了你。"
+      },
+      {
+        "text": "接受挑战",
+        "effects": {
+          "start_battle": {
+            "enemy": "gnoll_packleader",
+            "reward_gold": 15
+          }
+        },
+        "outcome": "她吹了声口哨，一群豺狼人从林子里扑了出来！"
+      }
+    ]
   }
 ]

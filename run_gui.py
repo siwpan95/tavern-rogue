@@ -1,6 +1,11 @@
 """
 TavernRogue 图形界面启动脚本（重构版）
+
+用法：
+    python run_gui.py                 # 随机种子
+    python run_gui.py --seed 12345    # 固定种子（可复现 / 可分享，结算屏会显示种子）
 """
+import argparse
 import os
 import sys
 
@@ -11,5 +16,14 @@ sys.path.insert(0, project_root)
 # 导入并运行图形界面（新架构）
 from ui.app import main
 
+
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description="TavernRogue - 酒馆异闻录")
+    parser.add_argument("--seed", type=int, default=None,
+                        help="固定随机种子（相同种子 = 相同地图与随机序列）")
+    return parser.parse_args(argv)
+
+
 if __name__ == '__main__':
-    main()
+    args = parse_args()
+    main(seed=args.seed)

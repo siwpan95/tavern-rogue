@@ -14,15 +14,15 @@ import json
 import random
 import re
 
-# 自研 AI 后端（third_party/ollama_generator，随仓分发）。
-# 这里曾经是无条件 import，而 third_party/ 又被 .gitignore 忽略 —— 干净克隆
-# 直接 ModuleNotFoundError，游戏连启动都做不到（2026-10-16 实测）。
+# 自研 AI 后端（game/ai_backend/，随仓分发）。
+# 这里曾经是无条件 import 且目标目录被 .gitignore 忽略 —— 干净克隆直接
+# ModuleNotFoundError，游戏连启动都做不到（2026-10-16 实测）。
 # 现在：后端缺失时**出声**降级，事件文案回退到 data/events.json 原文。
 AI_BACKEND_AVAILABLE = False
 AI_BACKEND_ERROR = ""
 
 try:
-    from third_party.ollama_generator import (
+    from game.ai_backend import (
         AITextGenerator, GenerationConfig, is_ai_available, get_generator
     )
     AI_BACKEND_AVAILABLE = True
@@ -38,7 +38,7 @@ except ImportError as exc:  # 干净克隆或未装依赖
 
     AI_BACKEND_ERROR = str(exc)
     print(
-        "[TavernRogue] AI 文案增强不可用（缺少 third_party.ollama_generator）：%s；"
+        "[TavernRogue] AI 文案增强不可用（缺少 game.ai_backend）：%s；"
         "事件将使用 data/events.json 的原始文案。" % exc,
         file=sys.stderr,
     )
