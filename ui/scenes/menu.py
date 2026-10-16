@@ -26,7 +26,9 @@ class MenuScene(Scene):
                          lambda: self.switch_to('class_select'))
         self.buttons.add(450, y + 70, 300, 50, "冒险图鉴",
                          lambda: self.switch_to('collection'))
-        self.buttons.add(450, y + 140, 300, 50, "退出游戏",
+        self.buttons.add(450, y + 140, 300, 50, "帮助",
+                         lambda: self.switch_to('help'))
+        self.buttons.add(450, y + 210, 300, 50, "退出游戏",
                          lambda: setattr(self.app, 'running', False))
         self.buttons.draw_all(self.screen)
 

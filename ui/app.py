@@ -56,6 +56,7 @@ class TavernRogueApp:
         """注册所有场景"""
         from ui.scenes.menu import MenuScene, ClassSelectScene
         from ui.scenes.collection_scene import CollectionScene
+        from ui.scenes.help_scene import HelpScene
         from ui.scenes.recruit import RecruitScene
         from ui.scenes.map_scene import MapScene
         from ui.scenes.battle import BattleScene
@@ -68,6 +69,7 @@ class TavernRogueApp:
 
         self.scenes.register('menu', MenuScene)
         self.scenes.register('collection', CollectionScene)
+        self.scenes.register('help', HelpScene)
         self.scenes.register('class_select', ClassSelectScene)
         self.scenes.register('recruit', RecruitScene)
         self.scenes.register('map', MapScene)

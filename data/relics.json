@@ -375,5 +375,15 @@
       "stat": "THORNS",
       "value": 1
     }
+  },
+  {
+    "id": "vault_key",
+    "name": "密室钥匙",
+    "rarity": "rare",
+    "description": "开启第 9 层的宝藏密室（该层是可选层，没有钥匙会被跳过）。",
+    "effect": {
+      "type": "vault_access",
+      "value": 1
+    }
   }
 ]

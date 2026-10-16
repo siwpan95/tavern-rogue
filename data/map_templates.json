@@ -105,7 +105,12 @@
       "type": "treasure",
       "nodes": 1,
       "requirement": "has_special_item",
-      "description": "隐藏的宝藏密室，只有携带特殊物品的勇者才能进入。"
+      "description": "隐藏的宝藏密室，只有携带特殊物品的勇者才能进入。",
+      "requires": {
+        "relic": "vault_key",
+        "relic_name": "密室钥匙"
+      },
+      "optional": true
     }
   ],
   "node_types": {

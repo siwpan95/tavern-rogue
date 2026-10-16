@@ -27,6 +27,9 @@ class BattleEngine:
         """
         self.event_queue = deque()
         self.battle_log = []
+        # 最近一场战斗的统计（冒险日志用）
+        self.last_battle_damage = 0
+        self.last_battle_turns = 0
         self.log_callback = log_callback or self._default_log
         self.data_loader = data_loader
         self._tribe_resonance = {}  # 种族共鸣数据，跨方法共享
@@ -998,7 +1001,13 @@ class BattleEngine:
         # 判断胜负
         allies_alive = any(a['health'] > 0 for a in allies)
         enemies_alive = any(e['health'] > 0 for e in enemies)
-        
+
+        # 本场打出的伤害（敌方掉血量），供冒险日志的"最高伤害"使用
+        self.last_battle_damage = sum(
+            max(0, int(e.get('max_health', 0) or 0) - max(0, int(e.get('health', 0) or 0)))
+            for e in enemies)
+        self.last_battle_turns = int(battle_state['turn'])
+
         if allies_alive and not enemies_alive:
             self._log("=== 战斗胜利！ ===")
             return ('ally', self.battle_log)

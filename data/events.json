@@ -1116,5 +1116,28 @@
         "outcome": "队伍里有人学会了模仿龙息。"
       }
     ]
+  },
+  {
+    "id": "ghost_plea",
+    "name": "幽灵的恳求",
+    "description": "一个半透明的身影跪在断墙前，指着自己胸口那枚早已锈死的徽章。",
+    "options": [
+      {
+        "text": "帮助幽灵（失去一件宝物）",
+        "effects": {
+          "lose_relic": 1,
+          "gain_adventurer": {
+            "tier": 5,
+            "random": true
+          }
+        },
+        "outcome": "幽灵把毕生的战技传给了你的同伴，然后化作了光尘。"
+      },
+      {
+        "text": "无视它",
+        "effects": {},
+        "outcome": "你从它身边走过，身后的哭声渐渐远去。"
+      }
+    ]
   }
 ]

@@ -139,16 +139,25 @@ def simulate_run(hero_class, seed, use_ai_targeting=True, advancement=0, max_ste
             layer = game.get_current_layer()
             if layer is None:
                 break
+
+            # 与 UI 一致：进入条件不满足的层直接跳过（第 9 层密室需要钥匙）
+            if not game.layer_accessible(layer["layer"]):
+                game.map_manager.current_layer = game.map_manager._accessible_next_layer(
+                    layer["layer"], game.relic_ids())
+                game.floor = game.map_manager.current_layer
+                continue
+
             node = _pick_node(layer)
             if node is None:
                 game.advance_floor()
                 continue
 
             game.map_manager.reveal_node(node["id"])
-            selected = game.map_manager.select_node(node["id"])
+            selected = game.select_map_node(node["id"])
             if not selected:
-                game.map_manager.complete_node(node["id"])
-                continue
+                # 选点被拒 = 出现了上面没覆盖的情况；响亮退出而不是静默把节点标完成
+                print("[balance] 警告：节点 %s 无法选择，本局提前结束" % node.get("id"))
+                break
             game.current_node = selected
 
             _sync_to_handler(game)

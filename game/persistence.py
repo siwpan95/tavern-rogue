@@ -155,8 +155,8 @@ class ProgressManager:
         return False
 
     def record_run(self, class_id: str, victory: bool, floor: int, relics: list = None,
-                   stats: dict = None, seed: int = None):
-        """记录一局结果（含本局统计与种子；未通关也计入总局数与累计统计）"""
+                   stats: dict = None, seed: int = None, lineup: list = None):
+        """记录一局结果（含本局统计、阵容快照与种子；未通关也计入总局数与累计统计）"""
         self.data['total_runs'] += 1
         if victory:
             self.data['victories'] += 1
@@ -169,6 +169,7 @@ class ProgressManager:
             'relics': relics or [],
             'stats': stats or {},
             'seed': seed,
+            'lineup': lineup or [],
         }
         self.data['run_history'].append(record)
         self.data['run_history'] = self.data['run_history'][-20:]
@@ -178,6 +179,8 @@ class ProgressManager:
         for key, value in (stats or {}).items():
             if isinstance(value, (int, float)):
                 totals[key] = totals.get(key, 0) + value
+
+        self._update_journal(record)
 
         # 更新最佳记录
         best = self.data['best_records'].get(class_id, {})
@@ -193,6 +196,65 @@ class ProgressManager:
             self.advance_class(class_id)
 
         self.save()
+
+    # ─── 冒险日志（规格 §9：最佳阵容 / 最高伤害 / 最爱种族）────────
+
+    def _update_journal(self, record: dict) -> None:
+        """维护冒险日志：最佳阵容（通关优先、其次层数、其次伤害）、最高伤害、种族统计。"""
+        journal = self.data.setdefault('journal', {})
+        journal.setdefault('best_lineup', [])
+        journal.setdefault('best_lineup_note', '')
+        journal.setdefault('max_damage', 0)
+        journal.setdefault('tribe_counts', {})
+
+        stats = record.get('stats') or {}
+        damage = int(stats.get('damage_best', 0) or 0)
+        journal['max_damage'] = max(int(journal.get('max_damage', 0) or 0), damage)
+
+        score = (1 if record.get('victory') else 0, int(record.get('floor', 0) or 0), damage)
+        best_score = tuple(journal.get('best_score') or (0, 0, 0))
+        if score > best_score and record.get('lineup'):
+            journal['best_score'] = list(score)
+            journal['best_lineup'] = list(record['lineup'])
+            journal['best_lineup_note'] = "%s · %s · 第 %d 层%s" % (
+                record.get('class_id', '?'), record.get('date', ''),
+                int(record.get('floor', 0) or 0), "（通关）" if record.get('victory') else "")
+
+        counts = journal['tribe_counts']
+        for unit in record.get('lineup') or []:
+            tribe = unit.get('tribe')
+            if tribe:
+                counts[tribe] = counts.get(tribe, 0) + 1
+
+    def get_journal(self) -> dict:
+        """冒险日志（给统计面板/结算屏用）。"""
+        journal = self.data.get('journal') or {}
+        counts = journal.get('tribe_counts') or {}
+        favorite = max(counts, key=lambda key: counts[key]) if counts else ''
+        return {
+            'best_lineup': journal.get('best_lineup') or [],
+            'best_lineup_note': journal.get('best_lineup_note', ''),
+            'max_damage': int(journal.get('max_damage', 0) or 0),
+            'favorite_tribe': favorite,
+            'favorite_tribe_count': counts.get(favorite, 0) if favorite else 0,
+        }
+
+    def journal_lines(self) -> list:
+        """冒险日志的人类可读行（结算屏/统计面板共用一处措辞）。"""
+        from game.data_labels import TRIBE_NAMES, lineup_line
+
+        journal = self.get_journal()
+        lineage = lineup_line(journal['best_lineup'])
+        if lineage:
+            lineage += "（%s）" % journal['best_lineup_note'] if journal['best_lineup_note'] else ""
+        lines = [
+            "最佳阵容：%s" % (lineage or "暂无"),
+            "最高单场伤害：%d" % journal['max_damage'],
+            "最爱种族：%s" % (TRIBE_NAMES.get(journal['favorite_tribe'], journal['favorite_tribe'])
+                            + ("（累计 %d 个单位）" % journal['favorite_tribe_count']
+                               if journal['favorite_tribe'] else "暂无")),
+        ]
+        return lines
 
     def get_advancement_label(self, class_id: str) -> str:
         level = self.get_class_advancement(class_id)

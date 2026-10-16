@@ -323,8 +323,31 @@ class GameManager:
     def get_current_layer(self):
         return self.map_manager.get_current_layer()
 
+    def layer_accessible(self, layer_num: int = None) -> bool:
+        """本层是否可进（规格 §6：第 9 层宝藏密室需要携带特定物品）。"""
+        layer_num = int(layer_num or self.map_manager.current_layer)
+        return self.map_manager.is_layer_accessible(layer_num, self.relic_ids())
+
+    def layer_lock_reason(self, layer_num: int = None) -> str:
+        """本层被锁的原因（可进则空串）。"""
+        layer_num = int(layer_num or self.map_manager.current_layer)
+        if self.map_manager.is_layer_accessible(layer_num, self.relic_ids()):
+            return ""
+        return self.map_manager.locked_layer_reason(layer_num)
+
+    def relic_ids(self) -> list:
+        return [r.get('id') for r in self.relics if isinstance(r, dict)]
+
     def select_map_node(self, node_id):
-        """选择节点并记住它 —— current_node 是 Scene._after_node() 结算节点的唯一依据。"""
+        """选择节点并记住它 —— current_node 是 Scene._after_node() 结算节点的唯一依据。
+
+        被锁的层（第 9 层密室）**响亮拒绝**，返回 None 让调用方留在原地。
+        """
+        layer = self.get_current_layer()
+        if layer is not None and not self.layer_accessible(layer['layer']):
+            print("[TavernRogue] 无法进入第 %d 层：%s"
+                  % (layer['layer'], self.layer_lock_reason(layer['layer'])))
+            return None
         selected = self.map_manager.select_node(node_id)
         if selected:
             self.current_node = selected
@@ -344,7 +367,7 @@ class GameManager:
                     and any(n['id'] == node_id and n.get('type') == 'boss'
                             for n in layer['nodes']))
 
-        self.map_manager.complete_node(node_id)
+        self.map_manager.complete_node(node_id, self.relic_ids())
         if was_boss:
             self._boss_defeated = True
             print("[TavernRogue] 最终 Boss 已被击败！")
@@ -504,7 +527,7 @@ class GameManager:
         return scaled
 
     def record_battle(self, result: str, node_type: str = None):
-        """记录一场战斗结果（结算屏与统计用）。"""
+        """记录一场战斗结果（结算屏、冒险日志与统计用）。"""
         stats = getattr(self, 'run_stats', None)
         if stats is None:
             return
@@ -515,6 +538,10 @@ class GameManager:
             stats['elites'] += 1
         elif node_type == 'boss' and result == 'ally':
             stats['bosses'] += 1
+        # 伤害统计（最高伤害 = 冒险日志的一项）
+        damage = int(getattr(self.battle_engine, 'last_battle_damage', 0) or 0)
+        stats['damage_total'] = stats.get('damage_total', 0) + damage
+        stats['damage_best'] = max(stats.get('damage_best', 0), damage)
 
     def run_summary_lines(self) -> list:
         """结算屏文案：结果 / 统计 / 个人最佳 / 下一目标。"""
@@ -534,6 +561,8 @@ class GameManager:
         if getattr(self, 'mutators', None):
             from game.mutators import describe
             lines.append("自定义规则：" + describe(self.mutators))
+        # 冒险日志（规格 §9：最佳阵容 / 最高伤害 / 最爱种族）
+        lines.extend(self.progress.journal_lines())
         return lines
 
     def next_goal_hint(self) -> str:
@@ -546,11 +575,13 @@ class GameManager:
         return "下一目标：突破第 %d 层（本局止步第 %d 层）" % (self.floor + 1, self.floor)
 
     def record_run(self, victory: bool, floor: int = None):
-        """记录本局结果到局外成长（含本局统计与种子，供统计面板/复盘使用）"""
+        """记录本局结果到局外成长（含本局统计、阵容快照与种子）"""
         if not self._run_class_id:
             return
         self._run_victory = victory
         relic_ids = [r.get('id') for r in self.relics]
+        lineup = [{'id': u.get('id'), 'name': u.get('name'), 'tribe': u.get('tribe'),
+                   'tier': u.get('tier')} for u in self.board]
         self.progress.record_run(
             self._run_class_id,
             victory,
@@ -558,6 +589,7 @@ class GameManager:
             relic_ids,
             stats=dict(getattr(self, 'run_stats', {}) or {}),
             seed=getattr(self, 'seed', None),
+            lineup=lineup,
         )
 
     def is_victory(self) -> bool:

@@ -34,6 +34,7 @@ RELIC_EFFECT_HANDLERS = {
     "shop_discount": "GameManager.shop_price",
     "relic_drop_bonus": "rewards.RewardSystem.generate_battle_rewards",
     "revive_on_death": "GameManager.damage_hero -> RelicSystem.try_hero_revive",
+    "vault_access": "MapManager.is_layer_accessible（第 9 层密室钥匙，非战斗效果）",
     # 2026-10-16 新增：三件"改变玩法"的史诗宝物
     "duplicate_tribe_resonance": "engine.apply_tribe_effects（最多种族计数 +1）",
     "keyword_for_stat_penalty": "engine._apply_relic_battle_start（给全队关键词，代价是最大生命）",

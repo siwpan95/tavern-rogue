@@ -30,6 +30,18 @@ class MapScene(Scene):
             f"第 {self.gm.floor} 层 - {name}", True, COLORS['text_primary'])
         self.screen.blit(t, t.get_rect(center=(WIDTH // 2, 50)))
 
+        # 层进入条件（规格 §6：第 9 层宝藏密室需要密室钥匙）—— 锁住时**说出原因**
+        lock_reason = self.gm.layer_lock_reason(layer['layer'])
+        if lock_reason:
+            warn = fonts.get('medium').render(
+                "🔒 本层无法进入：%s（本层为可选层，将被跳过）" % lock_reason,
+                True, COLORS['warning'] if 'warning' in COLORS else COLORS['text_secondary'])
+            self.screen.blit(warn, warn.get_rect(center=(WIDTH // 2, 92)))
+            self.buttons.clear()
+            self.buttons.add(450, 420, 300, 50, "跳过本层", self._skip_locked_layer)
+            self.buttons.draw_all(self.screen)
+            return
+
         self.buttons.clear()
         nodes = layer.get('nodes', [])
         for i, node in enumerate(nodes):
@@ -70,6 +82,22 @@ class MapScene(Scene):
                 self.buttons.add(x, y, w, h, '', lambda n=node: self._select(n))
 
         self.buttons.draw_all(self.screen)
+
+    def _skip_locked_layer(self):
+        """可选层进不去时，标记为完成并推进（不卡死）。"""
+        layer = self.gm.get_current_layer()
+        if not layer:
+            return
+        for node in layer.get('nodes', []):
+            node['completed'] = True
+        layer['completed'] = True
+        completed = self.gm.map_manager.map_data.setdefault('completed_layers', [])
+        if layer['layer'] not in completed:
+            completed.append(layer['layer'])
+        self.gm.map_manager.current_layer = self.gm.map_manager._accessible_next_layer(
+            layer['layer'], self.gm.relic_ids())
+        self.gm.floor = self.gm.map_manager.current_layer
+        print("[TavernRogue] 跳过第 %d 层（%s）" % (layer['layer'], self.gm.layer_lock_reason(layer['layer'])))
 
     def _select(self, node):
         selected = self.gm.select_map_node(node['id'])

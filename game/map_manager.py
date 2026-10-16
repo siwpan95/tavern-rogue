@@ -346,8 +346,38 @@ class MapManager:
         events_data = self.data_loader('events.json')
         return random.choice(events_data).copy()
     
-    def complete_node(self, node_id):
-        """完成节点"""
+    def layer_requirement(self, layer_num: int) -> dict:
+        """该层的进入条件（规格 §6：第 9 层"若携带特定物品可进入"）。"""
+        for layer in (self.map_templates or {}).get('layers', []):
+            if layer.get('layer') == layer_num:
+                return dict(layer.get('requires') or {})
+        return {}
+
+    def is_layer_accessible(self, layer_num: int, relic_ids=()) -> bool:
+        """按进入条件判断该层是否可进（无条件 = 可进）。"""
+        requirement = self.layer_requirement(layer_num)
+        needed = requirement.get('relic')
+        if not needed:
+            return True
+        return needed in set(relic_ids or ())
+
+    def locked_layer_reason(self, layer_num: int) -> str:
+        """给 UI 的一句话说明（可进则返回空串）。"""
+        requirement = self.layer_requirement(layer_num)
+        needed = requirement.get('relic')
+        if not needed:
+            return ""
+        return "需要携带「%s」才能进入" % requirement.get('relic_name', needed)
+
+    def _accessible_next_layer(self, completed_layer: int, relic_ids=()) -> int:
+        """推进到下一条**可进**的层；被锁住的层直接跳过（第 9 层是可选层）。"""
+        candidate = completed_layer + 1
+        while candidate <= self.max_layer and not self.is_layer_accessible(candidate, relic_ids):
+            candidate += 1
+        return min(candidate, self.max_layer)
+
+    def complete_node(self, node_id, relic_ids=()):
+        """完成节点；层完成后推进到下一条可进的层（会跳过未解锁的层）。"""
         if not self.map_data:
             return False
         
@@ -362,9 +392,10 @@ class MapManager:
                         layer['completed'] = True
                         self.map_data['completed_layers'].append(layer['layer'])
                         
-                        # 进入下一层
+                        # 进入下一层（跳过进入条件不满足的层）
                         if layer['layer'] < self.max_layer:
-                            self.current_layer = layer['layer'] + 1
+                            self.current_layer = self._accessible_next_layer(
+                                layer['layer'], relic_ids)
                     
                     return True
         
