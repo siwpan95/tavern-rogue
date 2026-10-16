@@ -3,6 +3,7 @@ event_scene.py — 随机事件场景
 """
 import random
 import pygame
+from game.event_effects import EventEffectResolver
 from ui.scenes.base import Scene
 from ui.renderer import fill_bg, draw_status_bar, fonts, COLORS, WIDTH
 
@@ -57,82 +58,46 @@ class EventScene(Scene):
         self.buttons.draw_all(self.screen)
 
     def _choose(self, option):
+        """结算选项：效果实现只有一处（game/event_effects.py），本场景不再自己写一套。"""
         effects = option.get('effects', {})
         outcome = option.get('outcome', '')
 
-        if 'heal' in effects:
-            a = self.gm.heal_hero(effects['heal'])
-            print(f"[TavernRogue] 恢复了 {a} 点生命值")
-        if 'damage' in effects or 'damage_hero' in effects:
-            dmg = effects.get('damage', effects.get('damage_hero', 0))
-            self.gm.damage_hero(dmg)
-            print(f"[TavernRogue] 受到了 {dmg} 点伤害")
-        if 'gain_gold' in effects:
-            self.gm.gold += effects['gain_gold']
-            print(f"[TavernRogue] 获得 {effects['gain_gold']} 金币")
-        if 'cost_gold' in effects and self.gm.gold >= effects['cost_gold']:
-            self.gm.gold -= effects['cost_gold']
-            print(f"[TavernRogue] 花费 {effects['cost_gold']} 金币")
-        if 'gain_adventurer' in effects:
-            ti = effects['gain_adventurer'].get('tier', 1)
-            adv_data = self.gm.load_data('adventurers.json')
-            available = [a for a in adv_data if a['tier'] == ti]
-            if available and self.gm.can_add_to_hand():
-                card = random.choice(available).copy()
-                self.gm.add_to_hand(card)
-                print(f"[TavernRogue] 获得冒险者 {card['name']}！")
-        if 'gain_relic' in effects and self.gm.can_add_relic():
-            relics_data = self.gm.load_data('relics.json')
-            if relics_data:
-                relic = random.choice(relics_data).copy()
-                self.gm.add_relic(relic)
-                print(f"[TavernRogue] 获得宝物 {relic['name']}！")
-        if 'lose_relic' in effects and self.gm.relics:
-            lost = self.gm.relics.pop(0)
-            print(f"[TavernRogue] 失去了宝物 {lost['name']}")
-        if 'coin_flip' in effects:
-            if random.choice([True, False]):
-                self.gm.heal_hero(5)
-                print("[TavernRogue] 硬币正面！恢复了 5 点生命值")
-            else:
-                self.gm.damage_hero(3)
-                print("[TavernRogue] 硬币反面！受到了 3 点伤害")
-        if 'sacrifice_adventurer' in effects and self.gm.hand:
-            lost = self.gm.hand.pop(0)
-            print(f"[TavernRogue] 献祭了 {lost['name']}")
-            if 'heal_hero' in effects:
-                self.gm.heal_hero(effects['heal_hero'])
-        if 'heal_hero' in effects and 'sacrifice_adventurer' not in effects:
-            self.gm.heal_hero(effects['heal_hero'])
-        if 'upgrade_board' in effects:
-            stat = effects['upgrade_board'].get('stat', 'attack')
-            value = effects['upgrade_board'].get('value', 1)
-            for unit in self.gm.board:
-                unit[stat] = unit.get(stat, 0) + value
-            print(f"[TavernRogue] 所有场上单位 {stat}+{value}")
-        if effects.get('purify_board', False):
-            negative = {'POISON'}
-            for unit in self.gm.board:
-                unit['keywords'] = [k for k in unit.get('keywords', []) if k not in negative]
-            print("[TavernRogue] 净化了场上单位的负面状态")
-        if 'enchant_board' in effects:
-            keyword = effects['enchant_board'].get('keyword')
-            apply_all = effects['enchant_board'].get('all', False)
-            if keyword and self.gm.board:
-                targets = self.gm.board if apply_all else [random.choice(self.gm.board)]
-                for unit in targets:
-                    keywords = unit.setdefault('keywords', [])
-                    if keyword not in keywords:
-                        keywords.append(keyword)
-                print(f"[TavernRogue] 为场上单位附加 {keyword}")
-        if effects.get('regenerate_map', False):
-            if self.gm.map_manager:
-                self.gm.map_manager.generate_map()
-                print("[TavernRogue] 地图已重塑")
+        resolver = EventEffectResolver(
+            hero=self.gm.hero,
+            hand=self.gm.hand,
+            board=self.gm.board,
+            relics=self.gm.relics,
+            data_loader=self.gm.load_data,
+            map_manager=self.gm.map_manager,
+            gold=self.gm.gold,
+            max_hand=self.gm.MAX_HAND,
+            can_add_to_hand=self.gm.can_add_to_hand,
+            can_add_relic=self.gm.can_add_relic,
+        ).apply(effects)
+        self.gm.gold = resolver.gold
+
+        for line in resolver.logs:
+            print(f"[TavernRogue] {line}")
         if outcome:
             print(f"[TavernRogue] {outcome}")
+
+        # 事件里的「战斗！」选项走真正的战斗（此前只设了个没人读的 trigger_battle）
+        if resolver.pending_battle:
+            self._start_event_battle(resolver.pending_battle)
+            return
 
         if not self.gm.is_hero_alive():
             self.switch_to('game_over')
         else:
             self._after_node()
+
+    def _start_event_battle(self, battle_info):
+        """按事件指定的敌人开一场战斗；敌人不存在时响亮跳过而不是静默卡住。"""
+        enemy_id = battle_info.get('enemy')
+        enemies_data = self.gm.load_data('enemies.json') or []
+        template = next((e for e in enemies_data if e.get('id') == enemy_id), None)
+        if template is None:
+            print(f"[TavernRogue] 事件引用了不存在的敌人 {enemy_id}，已跳过战斗")
+            self._after_node()
+            return
+        self.switch_to('battle', node=self._node, event_battle=battle_info)

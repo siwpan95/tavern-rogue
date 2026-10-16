@@ -780,8 +780,8 @@
     "max_health": 2
   },
   {
-    "id": "half_orc_berserker",
-    "name": "半兽人狂战士",
+    "id": "half_orc_raider",
+    "name": "半兽人劫掠者",
     "tier": 2,
     "attack": 4,
     "health": 2,
@@ -808,8 +808,8 @@
     "max_health": 3
   },
   {
-    "id": "human_knight",
-    "name": "人类骑士",
+    "id": "human_vanguard",
+    "name": "人类先锋",
     "tier": 3,
     "attack": 3,
     "health": 5,
@@ -823,8 +823,8 @@
     "max_health": 5
   },
   {
-    "id": "elf_ranger",
-    "name": "精灵游侠",
+    "id": "elf_marksman",
+    "name": "精灵神射手",
     "tier": 3,
     "attack": 4,
     "health": 3,
@@ -839,8 +839,8 @@
     "max_health": 3
   },
   {
-    "id": "dwarf_defender",
-    "name": "矮人防御者",
+    "id": "dwarf_bulwark",
+    "name": "矮人壁垒卫",
     "tier": 3,
     "attack": 2,
     "health": 7,
@@ -909,8 +909,8 @@
     "max_health": 4
   },
   {
-    "id": "half_orc_champion",
-    "name": "半兽人冠军",
+    "id": "half_orc_reaver",
+    "name": "半兽人掠夺者",
     "tier": 4,
     "attack": 6,
     "health": 6,
@@ -924,8 +924,8 @@
     "max_health": 6
   },
   {
-    "id": "tiefling_sorcerer",
-    "name": "提夫林术师",
+    "id": "tiefling_hexer",
+    "name": "提夫林咒术师",
     "tier": 4,
     "attack": 3,
     "health": 5,
@@ -942,8 +942,8 @@
     "max_health": 5
   },
   {
-    "id": "human_paladin",
-    "name": "人类圣骑士",
+    "id": "human_templar",
+    "name": "人类圣殿骑士",
     "tier": 5,
     "attack": 5,
     "health": 8,
@@ -1016,8 +1016,8 @@
     "max_health": 7
   },
   {
-    "id": "human_legend",
-    "name": "人类传奇英雄",
+    "id": "human_myth",
+    "name": "人类神话英雄",
     "tier": 6,
     "attack": 8,
     "health": 10,

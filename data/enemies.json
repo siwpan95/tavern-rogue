@@ -521,5 +521,20 @@
     "is_elite": true,
     "initiative": 11,
     "max_health": 5
+  },
+  {
+    "id": "mimic",
+    "name": "贪婪的宝箱怪",
+    "tier": 3,
+    "attack": 3,
+    "health": 12,
+    "keywords": [
+      "GUARD",
+      "ARMOR"
+    ],
+    "script": {},
+    "reward_gold": 15,
+    "initiative": 6,
+    "max_health": 12
   }
 ]

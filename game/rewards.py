@@ -65,10 +65,15 @@ class RewardSystem:
             rewards['relic'] = self._random_relic(rarity='rare')
             rewards['discover'] = True
         
-        # 普通战斗有几率获得发现机会
+        # 普通战斗有几率获得发现机会（宝物「幸运币」提高掉落率）
         if not is_elite and not is_boss:
             rewards['discover'] = random.random() < 0.3  # 30%几率
-        
+
+        bonus = self.relic_system.get_relic_drop_bonus() if self.relic_system else 0.0
+        if bonus > 0 and rewards.get('relic') is None:
+            if random.random() < min(1.0, bonus):
+                rewards['relic'] = self._random_relic()
+
         return rewards
     
     def _random_relic(self, rarity=None):

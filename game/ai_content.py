@@ -14,10 +14,34 @@ import json
 import random
 import re
 
-# 使用项目内部的 ollama_generator 副本，避免跨项目依赖
-from third_party.ollama_generator import (
-    AITextGenerator, GenerationConfig, is_ai_available, get_generator
-)
+# 自研 AI 后端（third_party/ollama_generator，随仓分发）。
+# 这里曾经是无条件 import，而 third_party/ 又被 .gitignore 忽略 —— 干净克隆
+# 直接 ModuleNotFoundError，游戏连启动都做不到（2026-10-16 实测）。
+# 现在：后端缺失时**出声**降级，事件文案回退到 data/events.json 原文。
+AI_BACKEND_AVAILABLE = False
+AI_BACKEND_ERROR = ""
+
+try:
+    from third_party.ollama_generator import (
+        AITextGenerator, GenerationConfig, is_ai_available, get_generator
+    )
+    AI_BACKEND_AVAILABLE = True
+except ImportError as exc:  # 干净克隆或未装依赖
+    AITextGenerator = None
+    GenerationConfig = None
+
+    def is_ai_available(*_args, **_kwargs):
+        return False
+
+    def get_generator(*_args, **_kwargs):
+        return None
+
+    AI_BACKEND_ERROR = str(exc)
+    print(
+        "[TavernRogue] AI 文案增强不可用（缺少 third_party.ollama_generator）：%s；"
+        "事件将使用 data/events.json 的原始文案。" % exc,
+        file=sys.stderr,
+    )
 
 
 class AIContentGenerator:
@@ -53,6 +77,9 @@ class AIContentGenerator:
         """AI 是否可用（配置正确且能连上）"""
         if self._available is not None:
             return self._available
+        if not AI_BACKEND_AVAILABLE:
+            self._available = False
+            return False
         gen = self._ensure_generator()
         if gen is None:
             self._available = False

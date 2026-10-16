@@ -156,9 +156,17 @@ class GameManager:
         return self.health - old
 
     def damage_hero(self, amount: int) -> int:
-        """对英雄造成伤害, 返回剩余生命"""
+        """对英雄造成伤害, 返回剩余生命；致命时先看凤凰之灰能否救回。"""
         self.health = max(0, self.health - amount)
+        if self.health <= 0 and self.relic_system is not None:
+            if self.relic_system.try_hero_revive(self.hero):
+                print("[TavernRogue] 凤凰之灰生效：英雄复活！")
         return self.health
+
+    def shop_price(self, base_cost: int) -> int:
+        """商店价格（宝物「商人祝福」打折，最低 1 金）。"""
+        discount = self.relic_system.get_shop_discount() if self.relic_system else 0
+        return max(1, int(base_cost) - discount)
 
     def is_hero_alive(self) -> bool:
         return self.health > 0
@@ -204,11 +212,19 @@ class GameManager:
         return self.map_manager.get_current_layer()
 
     def select_map_node(self, node_id):
-        return self.map_manager.select_node(node_id)
+        """选择节点并记住它 —— current_node 是 Scene._after_node() 结算节点的唯一依据。"""
+        selected = self.map_manager.select_node(node_id)
+        if selected:
+            self.current_node = selected
+        return selected
 
     def complete_node(self, node_id):
         """完成节点, 返回 (ok, layer_completed)"""
         layer = self.get_current_layer()
+        if layer is None:
+            # 响亮失败：没有当前层（地图未生成或节点不属于本层），不能拿 None 去索引
+            print("[TavernRogue] 警告：当前没有可结算的层，节点 %s 未标记完成" % node_id)
+            return False, False
         remaining = [n for n in layer['nodes']
                      if not n['completed'] and n['id'] != node_id]
         was_last = len(remaining) == 0

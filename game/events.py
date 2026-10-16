@@ -4,6 +4,7 @@
 """
 import json
 import random
+from game.event_effects import EventEffectResolver
 
 
 class EventSystem:
@@ -98,139 +99,33 @@ class EventSystem:
         return True, option.get('outcome', '完成了选择。'), result
     
     def _apply_effects(self, effects, game_state):
-        """应用事件效果"""
-        hero = game_state.get('hero')
-        hand = game_state.get('hand', [])
-        board = game_state.get('board', [])
-        relics = game_state.get('relics', [])
-        gold = game_state.get('gold', 0)
-        
-        # 造成伤害
-        if 'damage' in effects:
-            if hero:
-                hero.take_damage(effects['damage'])
-        
-        if 'damage_hero' in effects:
-            if hero:
-                hero.take_damage(effects['damage_hero'])
-        
-        # 治疗
-        if 'heal' in effects:
-            if hero:
-                hero.heal(effects['heal'])
-        
-        if 'heal_hero' in effects:
-            if hero:
-                hero.heal(effects['heal_hero'])
-        
-        # 获得铸币
-        if 'gain_gold' in effects:
-            gold += effects['gain_gold']
-            game_state['gold'] = gold
-        
-        # 花费铸币
-        if 'cost_gold' in effects:
-            if gold >= effects['cost_gold']:
-                gold -= effects['cost_gold']
-                game_state['gold'] = gold
-            else:
-                return game_state  # 铸币不足，不执行
-        
-        # 获得冒险者
-        if 'gain_adventurer' in effects:
-            adventurer_info = effects['gain_adventurer']
-            tier = adventurer_info.get('tier', 1)
-            random_choice = adventurer_info.get('random', False)
-            
-            if random_choice:
-                # 随机选择冒险者
-                adventurers_data = self.data_loader('adventurers.json')
-                available = [a for a in adventurers_data if a['tier'] == tier]
-                if available and len(hand) < 10:
-                    adventurer = random.choice(available).copy()
-                    hand.append(adventurer)
-                    game_state['hand'] = hand
-        
-        # 失去宝物
-        if 'lose_relic' in effects:
-            count = effects['lose_relic']
-            if len(relics) >= count:
-                for _ in range(count):
-                    relics.pop(0)
-                game_state['relics'] = relics
-        
-        # 获得宝物
-        if 'gain_relic' in effects:
-            relic_info = effects['gain_relic']
-            random_choice = relic_info.get('random', False)
-            
-            if random_choice:
-                relics_data = self.data_loader('relics.json')
-                if relics_data and len(relics) < 6:
-                    relic = random.choice(relics_data).copy()
-                    relics.append(relic)
-                    game_state['relics'] = relics
-        
-        # 场上单位强化
-        if 'upgrade_board' in effects:
-            stat = effects['upgrade_board'].get('stat', 'attack')
-            value = effects['upgrade_board'].get('value', 1)
-            for unit in board:
-                unit[stat] = unit.get(stat, 0) + value
-            game_state['board'] = board
-        
-        # 净化场上单位
-        if effects.get('purify_board', False):
-            negative = {'POISON'}
-            for unit in board:
-                unit['keywords'] = [k for k in unit.get('keywords', []) if k not in negative]
-            game_state['board'] = board
-        
-        # 为场上单位附魔关键词
-        if 'enchant_board' in effects:
-            enchant = effects['enchant_board']
-            keyword = enchant.get('keyword')
-            apply_all = enchant.get('all', False)
-            if keyword:
-                targets = board if apply_all else ([random.choice(board)] if board else [])
-                for unit in targets:
-                    keywords = unit.setdefault('keywords', [])
-                    if keyword not in keywords:
-                        keywords.append(keyword)
-                game_state['board'] = board
-        
-        # 投硬币（随机正负效果）
-        if effects.get('coin_flip', False):
-            if random.choice([True, False]):
-                # 正面：获得增益
-                if hero:
-                    hero.heal(5)
-            else:
-                # 反面：获得减益
-                if hero:
-                    hero.take_damage(3)
-        
-        # 开始战斗
-        if 'start_battle' in effects:
-            battle_info = effects['start_battle']
-            # 这里需要触发战斗，简化处理
-            game_state['trigger_battle'] = battle_info
-        
-        # 献祭冒险者
-        if effects.get('sacrifice_adventurer', False):
-            if hand:
-                hand.pop(0)
-                game_state['hand'] = hand
-                if 'heal_hero' in effects:
-                    if hero:
-                        hero.heal(effects['heal_hero'])
-        
-        # 重塑地图
-        if effects.get('regenerate_map', False):
+        """应用事件效果 —— 实现只在 game/event_effects.py 一处，这里只做状态搬运。
+
+        game_state: {'hero', 'hand', 'board', 'relics', 'gold', ...}
+        返回: 更新后的 game_state（含 trigger_battle，供上层决定是否开战）
+        """
+        resolver = EventEffectResolver(
+            hero=game_state.get('hero'),
+            hand=game_state.get('hand'),
+            board=game_state.get('board'),
+            relics=game_state.get('relics'),
+            data_loader=self.data_loader,
+            map_manager=game_state.get('map_manager'),
+            gold=game_state.get('gold', 0),
+            max_hand=game_state.get('max_hand', 10),
+        ).apply(effects)
+
+        game_state['gold'] = resolver.gold
+        game_state['hand'] = resolver.hand
+        game_state['board'] = resolver.board
+        game_state['relics'] = resolver.relics
+        game_state.setdefault('event_logs', []).extend(resolver.logs)
+        if resolver.pending_battle:
+            game_state['trigger_battle'] = resolver.pending_battle
+        if resolver.regenerated_map:
             game_state['regenerate_map'] = True
-        
         return game_state
-    
+
     def get_event_display(self, event=None):
         """获取事件显示文本"""
         if not event:

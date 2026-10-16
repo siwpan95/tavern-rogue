@@ -4,6 +4,7 @@
 """
 import json
 import random
+from game.relic_effects import build_battle_mods
 
 
 class RelicSystem:
@@ -98,11 +99,12 @@ class RelicSystem:
         
         return effects
     
-    def apply_battle_start_effects(self, allies, enemies):
+    def apply_battle_start_effects(self, allies, enemies, hero=None):
         """
         应用战斗开始时的宝物效果
         allies: 友军列表
         enemies: 敌军列表
+        hero: 英雄对象（可选；吸血类宝物需要它才能真正回血）
         """
         log = []
         
@@ -148,8 +150,12 @@ class RelicSystem:
                         damage = effect.get('value', 0)
                         target['health'] -= damage
                         log.append(f"{relic['name']}: 对 {target['name']} 造成 {damage} 点伤害")
-                        # 治疗英雄逻辑在 BattleScene 中处理，这里记录
-                        log.append(f"{relic['name']}: 恢复英雄 {damage} 点生命值")
+                        # 吸血：必须真的回血（旧版只写日志，回血那句没人执行）
+                        if hero is not None:
+                            before = hero.health
+                            hero.heal(damage)
+                            healed = hero.health - before
+                            log.append(f"{relic['name']}: 恢复英雄 {healed} 点生命值")
                         if target['health'] <= 0:
                             log.append(f"{target['name']} 被宝物效果消灭！")
             
@@ -162,8 +168,108 @@ class RelicSystem:
                     if 'SHIELD' not in target['keywords']:
                         target['keywords'].append('SHIELD')
                         log.append(f"{relic['name']}: {target['name']} 获得力场护盾")
-        
+
+            elif effect_type == 'battle_start_shield_all':
+                # 战斗开始时给所有友军施加护盾（守护图腾）
+                for ally in allies:
+                    if ally.get('health', 0) <= 0:
+                        continue
+                    keywords = ally.setdefault('keywords', [])
+                    if 'SHIELD' not in keywords:
+                        keywords.append('SHIELD')
+                log.append(f"{relic['name']}: 所有友军获得力场护盾")
+
+            elif effect_type == 'battle_start_random_guard':
+                # 战斗开始时随机一名友军获得守卫（远古盾牌）
+                alive = [a for a in allies if a.get('health', 0) > 0]
+                if alive:
+                    target = random.choice(alive)
+                    keywords = target.setdefault('keywords', [])
+                    if 'GUARD' not in keywords:
+                        keywords.append('GUARD')
+                    log.append(f"{relic['name']}: {target['name']} 获得守卫")
+
+            elif effect_type == 'battle_start_debuff':
+                # 战斗开始时削弱所有敌人（深渊之刃）
+                stat = effect.get('stat', 'attack')
+                value = effect.get('value', -1)
+                for enemy in enemies:
+                    if enemy.get('health', 0) <= 0:
+                        continue
+                    enemy[stat] = max(0, enemy.get(stat, 0) + value)
+                log.append(f"{relic['name']}: 所有敌人 {stat}{value:+d}")
+
+            elif effect_type == 'tribe_buff':
+                # 指定种族获得属性或关键词（矮人护甲 / 半兽人战斧）
+                tribe = effect.get('tribe')
+                stat = effect.get('stat', 'attack')
+                value = effect.get('value', 1)
+                hit = 0
+                for ally in allies:
+                    if ally.get('tribe') != tribe or ally.get('health', 0) <= 0:
+                        continue
+                    if stat in ('attack', 'health'):
+                        ally[stat] = ally.get(stat, 0) + value
+                        if stat == 'health':
+                            ally['max_health'] = ally.get('max_health', 0) + value
+                    else:
+                        keywords = ally.setdefault('keywords', [])
+                        if stat not in keywords:
+                            keywords.append(stat)
+                    hit += 1
+                log.append(f"{relic['name']}: {hit} 名 {tribe} 冒险者获得 {stat}{value:+d}"
+                           if stat in ('attack', 'health')
+                           else f"{relic['name']}: {hit} 名 {tribe} 冒险者获得 {stat}")
+
+            elif effect_type == 'tribe_dodge':
+                # 指定种族获得额外闪避（精灵长弓）
+                tribe = effect.get('tribe')
+                value = float(effect.get('value', 0.0) or 0.0)
+                hit = 0
+                for ally in allies:
+                    if ally.get('tribe') != tribe or ally.get('health', 0) <= 0:
+                        continue
+                    ally['dodge_chance'] = ally.get('dodge_chance', 0.0) + value
+                    hit += 1
+                log.append(f"{relic['name']}: {hit} 名 {tribe} 冒险者闪避 +{value:.0%}")
+
         return log
+
+    # ─── 战斗修正 / 局外效果 ──────────────────────────────
+
+    def get_battle_mods(self):
+        """战斗引擎需要的宝物修正（纯数值，见 game/relic_effects.py）。"""
+        return build_battle_mods(self.relics)
+
+    def get_battle_gold_bonus(self):
+        """每场战斗后额外铸币（聚宝袋）。"""
+        return int(self.get_battle_mods().get('extra_gold', 0) or 0)
+
+    def get_relic_drop_bonus(self):
+        """宝物掉落率加成（幸运币）。"""
+        return float(self.get_battle_mods().get('relic_drop_bonus', 0.0) or 0.0)
+
+    def get_shop_discount(self):
+        """商店折扣（商人祝福）。"""
+        return int(self.get_battle_mods().get('shop_discount', 0) or 0)
+
+    def reset_battle_flags(self):
+        """每场战斗开始前重置「每场一次」类宝物的使用标记。"""
+        self._revive_used = False
+
+    def try_hero_revive(self, hero):
+        """英雄本应死亡时用凤凰之灰救回一次；返回是否救回。
+
+        「每场战斗一次」由 reset_battle_flags() 在开战时重置。
+        """
+        if hero is None or getattr(self, '_revive_used', False):
+            return False
+        value = int(self.get_battle_mods().get('revive_on_death', 0) or 0)
+        if value <= 0:
+            return False
+        self._revive_used = True
+        hero.health = min(getattr(hero, 'max_health', value), value)
+        return True
     
     def apply_heal_per_turn(self, hero):
         """应用每回合治疗效果"""

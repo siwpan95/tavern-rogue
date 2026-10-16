@@ -20,10 +20,13 @@ class BattleScene(Scene):
     _SHAKE_AMPLITUDE = 6       # 受击抖动幅度
     _FLOAT_SPEED = 40          # 伤害数字飘动速度（像素/秒）
 
-    def enter(self, node=None, **kwargs):
+    def enter(self, node=None, event_battle=None, **kwargs):
         super().enter(**kwargs)
 
         self._node = node
+        # 事件战斗（事件选项里的「战斗！」）：敌人由事件指定，胜利奖励也由事件给
+        self._event_battle = event_battle or None
+        self._event_reward_gold = int((event_battle or {}).get('reward_gold', 0) or 0)
         ntype = node['type'] if node else 'monster'
         is_boss = (ntype == 'boss')
         is_elite = (ntype == 'elite')
@@ -53,6 +56,17 @@ class BattleScene(Scene):
             raw = random.sample(candidates, min(3, len(candidates)))
 
         self.enemies = self.gm.scale_enemies(copy.deepcopy(raw))
+
+        # 事件战斗：用事件指定的敌人替换按层随机抽取的结果
+        if self._event_battle:
+            template = self._find_enemy_template(self._event_battle.get('enemy'))
+            if template is None:
+                print("[TavernRogue] 事件引用了不存在的敌人 %s，已改为普通遭遇"
+                      % self._event_battle.get('enemy'))
+            else:
+                self._title = "事件战斗"
+                self.enemies = self.gm.scale_enemies(copy.deepcopy([template]))
+
         self.allies = copy.deepcopy(self.gm.board)
         self.messages = ["⚔ 战斗准备中……"]
         self.phase = 'prepare'
@@ -84,7 +98,10 @@ class BattleScene(Scene):
         self.gm.battle_engine.apply_tribe_effects(self.allies, None, enemies=self.enemies)
 
         if self.gm.relic_system and self.enemies:
-            relic_logs = self.gm.relic_system.apply_battle_start_effects(self.allies, self.enemies)
+            # 每场战斗重置「每场一次」类宝物（凤凰之灰）
+            self.gm.relic_system.reset_battle_flags()
+            relic_logs = self.gm.relic_system.apply_battle_start_effects(
+                self.allies, self.enemies, hero=self.gm.hero)
             for log in relic_logs:
                 self.messages.append(log)
 
@@ -179,9 +196,11 @@ class BattleScene(Scene):
             return
 
         self.messages.append("=== 自动战斗开始 ===")
-        extra_dodge = self.gm.relic_system.get_dodge_chance() if self.gm.relic_system else 0.0
+        # 宝物修正统一走 relic_mods（闪避/攻击/先攻/吸血/亡语双倍…），
+        # 不要再单传 extra_dodge_chance —— 那条路会让同一个宝物效果被算两遍。
+        relic_mods = self.gm.relic_system.get_battle_mods() if self.gm.relic_system else {}
         self._anim_result, logs = self.gm.battle_engine.simulate_battle(
-            self.allies, self.enemies, self.gm.hero, extra_dodge_chance=extra_dodge
+            self.allies, self.enemies, self.gm.hero, relic_mods=relic_mods
         )
 
         # 解析日志为动画事件（跳过纯标记行）
@@ -717,7 +736,29 @@ class BattleScene(Scene):
             self._after_node()
 
     def _victory(self):
+        bonus = self.gm.relic_system.get_battle_gold_bonus() if self.gm.relic_system else 0
+        # 事件战斗：奖励由事件给定，不进战斗奖励场景
+        if self._event_battle:
+            gold = int(self._event_reward_gold or 0) + bonus
+            if gold:
+                self.gm.gold += gold
+                self.messages.append(f"事件奖励：+{gold} 铸币")
+                print(f"[TavernRogue] 事件奖励 +{gold} 铸币")
+            self._after_node()
+            return
+        if bonus:
+            self.gm.gold += bonus
+            self.messages.append(f"宝物加成：+{bonus} 铸币")
         self.switch_to('reward', messages=self.messages)
+
+    def _find_enemy_template(self, enemy_id):
+        """按 id 在 enemies.json 里找模板；找不到返回 None（由调用方响亮处理）。"""
+        if not enemy_id:
+            return None
+        for enemy in (self.gm.load_data('enemies.json') or []):
+            if enemy.get('id') == enemy_id:
+                return enemy
+        return None
 
     def _defeat(self):
         # 失败伤害：剩余敌人攻击力之和，最低3点

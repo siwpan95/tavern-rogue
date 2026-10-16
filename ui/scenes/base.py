@@ -49,7 +49,14 @@ class Scene:
 
     def _after_node(self):
         """节点完成后的标准流程：检查层完成 → 招募/地图"""
-        ok, layer_done = self.gm.complete_node(self.gm.current_node['id'])
+        current = self.gm.current_node
+        if not current:
+            # 响亮失败：没有 current_node 说明调用方没走「选节点」这条路，
+            # 拿 None 去索引只会抛 TypeError（旧版就是这样崩的）。
+            print("[TavernRogue] 警告：没有进行中的节点，无法结算，已返回地图")
+            self.switch_to('map')
+            return
+        ok, layer_done = self.gm.complete_node(current['id'])
         if layer_done:
             self.gm.advance_floor()
             if self.gm.floor > self.gm.MAX_FLOORS:

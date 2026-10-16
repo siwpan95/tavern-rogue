@@ -51,18 +51,19 @@ class ShopScene(Scene):
 
             fs = fonts.get('small')
             fm = fonts.get('medium')
+            cost = self.gm.shop_price(adv['cost'])
             self.screen.blit(fm.render(adv['name'], True, COLORS['text_secondary']), (x + 10, y + 8))
             self.screen.blit(fs.render(
-                f"ATK:{adv['attack']} HP:{adv['health']} 费用:{adv['cost']}金",
+                f"ATK:{adv['attack']} HP:{adv['health']} 费用:{cost}金",
                 True, COLORS['text_secondary']), (x + 10, y + 38))
             if adv.get('keywords'):
                 self.screen.blit(fs.render(f"技能: {', '.join(adv['keywords'])}",
                                            True, COLORS['gold']), (x + 10, y + 60))
 
-            can = self.gm.gold >= adv['cost'] and len(self.gm.hand) < self.gm.MAX_HAND
-            btn_text = f"购买 ({adv['cost']}金)"
+            can = self.gm.gold >= cost and len(self.gm.hand) < self.gm.MAX_HAND
+            btn_text = f"购买 ({cost}金)"
             if not can:
-                btn_text = "金币不足" if self.gm.gold < adv['cost'] else "手牌已满"
+                btn_text = "金币不足" if self.gm.gold < cost else "手牌已满"
             self.buttons.add(x + 10, y + 90, 200, 30, btn_text,
                              lambda a=adv, idx=i: self._buy_adv(a, idx), enabled=can)
 
@@ -85,7 +86,8 @@ class ShopScene(Scene):
                                            True, COLORS['text_secondary']), (x + 10, y + 38))
 
                 rarity_cost = {'common': 5, 'rare': 8, 'epic': 12}
-                cost = relic.get('cost', rarity_cost.get(relic.get('rarity', 'common'), 5))
+                cost = self.gm.shop_price(
+                    relic.get('cost', rarity_cost.get(relic.get('rarity', 'common'), 5)))
                 can = self.gm.gold >= cost and len(self.gm.relics) < self.gm.MAX_RELICS
                 btn_text = f"购买 ({cost}金)" if can else (
                     "金币不足" if self.gm.gold < cost else "宝物已满")
@@ -96,15 +98,17 @@ class ShopScene(Scene):
         self.buttons.draw_all(self.screen)
 
     def _buy_adv(self, adv, idx):
-        if self.gm.gold >= adv['cost'] and self.gm.can_add_to_hand():
-            self.gm.spend_gold(adv['cost'])
+        cost = self.gm.shop_price(adv['cost'])
+        if self.gm.gold >= cost and self.gm.can_add_to_hand():
+            self.gm.spend_gold(cost)
             self.gm.add_to_hand(adv.copy())
             self.adventurers.pop(idx)
-            print(f"[TavernRogue] 购买了 {adv['name']}！")
+            print(f"[TavernRogue] 购买了 {adv['name']}！（{cost} 金）")
 
     def _buy_relic(self, relic):
         rarity_cost = {'common': 5, 'rare': 8, 'epic': 12}
-        cost = relic.get('cost', rarity_cost.get(relic.get('rarity', 'common'), 5))
+        cost = self.gm.shop_price(
+            relic.get('cost', rarity_cost.get(relic.get('rarity', 'common'), 5)))
         if self.gm.gold >= cost and self.gm.can_add_relic():
             self.gm.spend_gold(cost)
             self.gm.add_relic(relic.copy())

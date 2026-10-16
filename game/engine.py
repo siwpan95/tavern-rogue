@@ -21,6 +21,8 @@ class BattleEngine:
         self.log_callback = log_callback or self._default_log
         self.data_loader = data_loader
         self._tribe_resonance = {}  # 种族共鸣数据，跨方法共享
+        self._relic_mods = {}       # 本场战斗的宝物修正（simulate_battle 注入）
+        self._double_damage_used = False  # 「每场战斗一次」类宝物的使用标记
         
     def _default_log(self, message):
         """默认日志函数：仅输出到控制台"""
@@ -94,8 +96,9 @@ class BattleEngine:
             if start_script:
                 self._trigger_enemy_battle_start(enemy, start_script, allies, enemies)
 
-        # 龙裔种族共鸣：战斗开始时对随机敌人造成火焰伤害
+        # 龙裔种族共鸣：战斗开始时对随机敌人造成火焰伤害（宝物「龙裔鳞片」再 +N）
         fire_damage = self._tribe_resonance.get('dragonborn_fire_damage', 0)
+        fire_damage += int((getattr(self, '_relic_mods', {}) or {}).get('tribe_fire_bonus', 0) or 0)
         if fire_damage > 0 and enemies:
             alive_enemies = [e for e in enemies if e['health'] > 0]
             if alive_enemies:
@@ -116,8 +119,10 @@ class BattleEngine:
                 opponents = enemies if unit in allies else allies
                 if not opponents:
                     continue
-                # 伤害 = 攻击力的一半（向上取整），最低 1
+                # 伤害 = 攻击力的一半（向上取整），最低 1；龙裔受「龙裔鳞片」加成
                 damage = max(1, (unit.get('attack', 0) + 1) // 2)
+                if unit.get('tribe') == 'dragonborn':
+                    damage += int((getattr(self, '_relic_mods', {}) or {}).get('tribe_fire_bonus', 0) or 0)
                 for target in opponents:
                     if target['health'] > 0:
                         target['health'] -= damage
@@ -239,6 +244,15 @@ class BattleEngine:
         # 计算伤害
         damage = self._calculate_damage(attacker['attack'], defender)
 
+        # 宝物：每场战斗一次的下一次攻击双倍（狂战士药剂）
+        mods = getattr(self, '_relic_mods', {}) or {}
+        is_ally_attacker = attacker.get('_side') == 'ally'
+        if (is_ally_attacker and int(mods.get('double_damage_once', 0) or 0) > 0
+                and not self._double_damage_used):
+            self._double_damage_used = True
+            damage *= 2
+            self._log(f"{attacker['name']} 的狂战士药剂生效！本次伤害翻倍")
+
         # 半兽人种族共鸣：25% 几率造成双倍伤害
         half_orc_chance = self._tribe_resonance.get('half_orc_double_chance', 0)
         if half_orc_chance > 0 and random.random() < half_orc_chance:
@@ -249,8 +263,8 @@ class BattleEngine:
         defender['health'] -= damage
         self._log(f"{attacker['name']} 对 {defender['name']} 造成 {damage} 点伤害 (剩余HP: {defender['health']})")
 
-        # 检查横扫（SWEEP）— 对目标两侧敌人造成 1 点伤害
-        if 'SWEEP' in attacker.get('keywords', []):
+        # 检查横扫（SWEEP 与 CLEAVE 是同一件事：引擎历史实现叫 SWEEP，数据/设计稿用 CLEAVE）
+        if {'SWEEP', 'CLEAVE'} & set(attacker.get('keywords', [])):
             defender_list = self._get_unit_list(defender)
             if defender_list:
                 idx = None
@@ -308,6 +322,16 @@ class BattleEngine:
                         'killer': attacker
                     })
         
+        # 宝物：击杀回血（吸血护符）
+        if (is_ally_attacker and int(mods.get('heal_on_kill', 0) or 0) > 0
+                and defender.get('health', 0) <= 0):
+            amount = int(mods.get('heal_on_kill', 0) or 0)
+            max_hp = attacker.get('max_health', attacker.get('health', 0) + amount)
+            before = attacker.get('health', 0)
+            attacker['health'] = min(before + amount, max_hp)
+            if attacker['health'] > before:
+                self._log(f"{attacker['name']} 的吸血护符恢复 {attacker['health'] - before} 点生命")
+
         # 检查连击（风怒）- 每回合可以攻击两次
         if 'FRENZY' in attacker.get('keywords', []) and not attacker.get('has_attacked_twice'):
             attacker['has_attacked_twice'] = True
@@ -315,6 +339,22 @@ class BattleEngine:
             # 再次攻击（重新选择目标，因为战场可能已变化）
             new_target = self._select_target(attacker,
                                               self._get_opponents(attacker))
+            if new_target:
+                self.add_event({
+                    'type': 'attack',
+                    'attacker': attacker,
+                    'defender': new_target,
+                    'defender_side': self._get_side(new_target)
+                })
+
+        # 宝物：先攻（速度之靴）—— 与连击共用 has_attacked_twice，每回合最多打两次
+        double_chance = float(mods.get('double_attack_chance', 0.0) or 0.0)
+        if (is_ally_attacker and double_chance > 0
+                and not attacker.get('has_attacked_twice')
+                and random.random() < min(1.0, double_chance)):
+            attacker['has_attacked_twice'] = True
+            self._log(f"{attacker['name']} 的速度之靴触发先攻！")
+            new_target = self._select_target(attacker, self._get_opponents(attacker))
             if new_target:
                 self.add_event({
                     'type': 'attack',
@@ -334,21 +374,81 @@ class BattleEngine:
         return damage
     
     def _try_dodge(self, attacker, defender):
-        """尝试闪避，成功返回 True"""
-        if 'DODGE' not in defender.get('keywords', []):
+        """尝试闪避，成功返回 True。
+
+        闪避来源：单位自带 DODGE（基础 25%）+ 单位 dodge_chance 字段 +
+        宝物额外闪避 + 宝物种族闪避。
+        旧版在单位没有 DODGE 关键词时直接 return False —— 于是「移位斗篷 / 暗影斗篷」
+        给的闪避对没有 DODGE 的单位**完全无效**，而宝物描述并没有这个前提。
+        """
+        has_dodge = 'DODGE' in defender.get('keywords', [])
+        chance = float(defender.get('dodge_chance', 0.0) or 0.0)
+        if has_dodge:
+            chance = max(chance, 0.25)
+        chance += getattr(self, '_extra_dodge_chance', 0.0)
+
+        mods = getattr(self, '_relic_mods', {}) or {}
+        chance += float(mods.get('dodge_chance', 0.0) or 0.0)
+        for entry in mods.get('tribe_dodges', []) or []:
+            if defender.get('tribe') == entry.get('tribe'):
+                chance += float(entry.get('value', 0.0) or 0.0)
+
+        if chance <= 0:
             return False
-        
-        # 基础闪避几率 25%
-        dodge_chance = 0.25
-        # 可扩展：从 defender 读取 dodge_chance 字段
-        if 'dodge_chance' in defender:
-            dodge_chance = defender['dodge_chance']
-        
-        # 宝物/外部提供的额外闪避（从 battle_state 透传）
-        extra_dodge = getattr(self, '_extra_dodge_chance', 0.0)
-        dodge_chance = min(1.0, dodge_chance + extra_dodge)
-        
-        return random.random() < dodge_chance
+        return random.random() < min(1.0, chance)
+
+    # ============================================================
+    # 宝物修正
+    # ============================================================
+
+    def _apply_relic_battle_start(self, allies):
+        """开战时把「全局攻击加成 / 种族专属加成」落到友军身上。
+
+        只改本次战斗用的副本（UI 与 NodeHandler 都传 deepcopy），不污染常驻阵容。
+        """
+        mods = getattr(self, '_relic_mods', {}) or {}
+
+        bonus = int(mods.get('global_attack_bonus', 0) or 0)
+        if bonus:
+            for ally in allies:
+                if ally.get('health', 0) > 0:
+                    ally['attack'] = ally.get('attack', 0) + bonus
+            self._log(f"宝物加成：所有友军攻击力 +{bonus}")
+
+        for entry in mods.get('tribe_buffs', []) or []:
+            tribe = entry.get('tribe')
+            stat = entry.get('stat', 'attack')
+            value = entry.get('value', 0)
+            hit = 0
+            for ally in allies:
+                if ally.get('tribe') != tribe or ally.get('health', 0) <= 0:
+                    continue
+                if stat in ('attack', 'health'):
+                    ally[stat] = ally.get(stat, 0) + value
+                    if stat == 'health':
+                        ally['max_health'] = ally.get('max_health', 0) + value
+                else:
+                    keywords = ally.setdefault('keywords', [])
+                    if stat not in keywords:
+                        keywords.append(stat)
+                hit += 1
+            if hit:
+                self._log(f"宝物加成：{hit} 名 {tribe} 冒险者获得 {stat}{value:+d}"
+                          if stat in ('attack', 'health')
+                          else f"宝物加成：{hit} 名 {tribe} 冒险者获得 {stat}")
+
+    def _apply_heal_per_turn(self, hero):
+        """宝物：每回合结束恢复英雄生命（再生护符）。"""
+        if hero is None:
+            return
+        amount = int((getattr(self, '_relic_mods', {}) or {}).get('heal_per_turn', 0) or 0)
+        if amount <= 0:
+            return
+        before = hero.health
+        hero.heal(amount)
+        healed = hero.health - before
+        if healed > 0:
+            self._log(f"再生护符：恢复英雄 {healed} 点生命值")
     
     # ============================================================
     # 死亡与亡语
@@ -368,14 +468,20 @@ class BattleEngine:
         
         # 触发亡者遗赠（亡语）
         script = unit.get('script', {})
+        mods = getattr(self, '_relic_mods', {}) or {}
         if 'deathrattle' in script:
-            self.add_event({
-                'type': 'trigger_keyword',
-                'keyword': 'deathrattle',
-                'unit': unit,
-                'side': side,
-                'effect': script['deathrattle']
-            })
+            triggers = 1
+            if side == 'ally' and int(mods.get('deathrattle_double', 0) or 0) > 0:
+                triggers = 2
+                self._log(f"亡灵法书：{unit['name']} 的亡语触发两次")
+            for _ in range(triggers):
+                self.add_event({
+                    'type': 'trigger_keyword',
+                    'keyword': 'deathrattle',
+                    'unit': unit,
+                    'side': side,
+                    'effect': script['deathrattle']
+                })
         
         # 触发血怒（复仇）- 友方死亡后触发
         self._trigger_blood_fury(unit, side)
@@ -396,7 +502,24 @@ class BattleEngine:
                             'unit': target,
                             'side': 'enemy'
                         })
-    
+
+        # 宝物：提夫林之球 —— 提夫林冒险者阵亡时额外造成暗影伤害
+        relic_shadow = int(mods.get('tribe_death_damage', 0) or 0)
+        if relic_shadow > 0 and side == 'ally' and unit.get('tribe') == 'tiefling':
+            if hasattr(self, '_last_battle_state'):
+                enemies = self._last_battle_state.get('enemies', [])
+                alive_enemies = [e for e in enemies if e['health'] > 0]
+                if alive_enemies:
+                    target = random.choice(alive_enemies)
+                    target['health'] -= relic_shadow
+                    self._log(f"提夫林之球：暗影之力对 {target['name']} 造成 {relic_shadow} 点伤害")
+                    if target['health'] <= 0:
+                        self.add_event({
+                            'type': 'death',
+                            'unit': target,
+                            'side': 'enemy'
+                        })
+
     def _try_cleric_resurrect(self, unit):
         """尝试用牧师技能复活单位"""
         battle_state = getattr(self, '_last_battle_state', None)
@@ -615,16 +738,20 @@ class BattleEngine:
     # 战斗主循环
     # ============================================================
     
-    def simulate_battle(self, allies, enemies, hero=None, extra_dodge_chance=0.0):
+    def simulate_battle(self, allies, enemies, hero=None, extra_dodge_chance=0.0,
+                        relic_mods=None):
         """
         模拟完整战斗
         allies: 友军单位列表
         enemies: 敌军单位列表
         hero: 英雄对象（可选）
-        extra_dodge_chance: 额外闪避几率（来自宝物等）
+        extra_dodge_chance: 额外闪避几率（外部来源）
+        relic_mods: 宝物战斗修正字典（见 game/relic_effects.build_battle_mods）
         返回: (胜利方, 战斗日志)
         """
         self.reset()
+        self._relic_mods = dict(relic_mods or {})
+        self._double_damage_used = False
         
         # 初始化战斗状态
         battle_state = {
@@ -644,6 +771,9 @@ class BattleEngine:
         for unit in allies + enemies:
             if 'max_health' not in unit or unit['max_health'] <= 0:
                 unit['max_health'] = unit.get('health', 1)
+
+        # 宝物：全局攻击加成 + 种族专属加成（只作用于本次战斗的副本）
+        self._apply_relic_battle_start(allies)
         
         self._log("=== 战斗开始 ===")
         
@@ -669,6 +799,7 @@ class BattleEngine:
             self.process_events()
             
             battle_state['turn'] += 1
+            self._apply_heal_per_turn(hero)
         
         # 判断胜负
         allies_alive = any(a['health'] > 0 for a in allies)

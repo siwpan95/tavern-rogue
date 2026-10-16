@@ -87,10 +87,11 @@ class ProgressManager:
         return class_id in self.data['unlocked_classes']
 
     def unlock_class(self, class_id: str) -> bool:
-        """解锁一个职业，返回是否为新解锁"""
+        """解锁一个职业，返回是否为新解锁（立即落盘，避免进度丢失）"""
         if class_id not in self.data['unlocked_classes']:
             self.data['unlocked_classes'].append(class_id)
             self.data['unlocked_classes'].sort()
+            self.save()
             return True
         return False
 
@@ -98,8 +99,9 @@ class ProgressManager:
         return self.data['advancements'].get(class_id, 0)
 
     def set_class_advancement(self, class_id: str, level: int):
-        """设置职业进阶等级，不会超过 MAX_ADVANCEMENT"""
+        """设置职业进阶等级，不会超过 MAX_ADVANCEMENT（立即落盘）"""
         self.data['advancements'][class_id] = max(0, min(level, MAX_ADVANCEMENT))
+        self.save()
 
     def advance_class(self, class_id: str) -> bool:
         """提升一个职业的进阶等级，返回是否成功"""
@@ -127,6 +129,7 @@ class ProgressManager:
     def unlock_relic(self, relic_id: str) -> bool:
         if relic_id not in self.data['relic_unlocks'] or not self.data['relic_unlocks'].get(relic_id):
             self.data['relic_unlocks'][relic_id] = True
+            self.save()
             return True
         return False
 

@@ -2,9 +2,11 @@
 节点事件处理器 - 分发和处理不同类型的节点事件
 支持怪物战斗、商店、营地、奇遇等节点类型
 """
+import copy
 import json
 import random
 from game.engine import BattleEngine
+from game.event_effects import EventEffectResolver
 from game.events import EventSystem
 from game.relics import RelicSystem
 from game.ai_content import AIContentGenerator
@@ -103,13 +105,20 @@ class NodeHandler:
         self.battle_engine.apply_tribe_effects(self.board, None, enemies=enemies)
         
         # 触发宝物战斗开始效果
+        relic_mods = {}
         if self.relic_system:
-            relic_logs = self.relic_system.apply_battle_start_effects(self.board, enemies)
+            self.relic_system.reset_battle_flags()
+            relic_logs = self.relic_system.apply_battle_start_effects(
+                self.board, enemies, hero=self.hero)
             logs.extend(relic_logs)
+            relic_mods = self.relic_system.get_battle_mods()
         
         # 开始战斗
-        allies = self.board.copy()
-        result, battle_logs = self.battle_engine.simulate_battle(allies, enemies, self.hero)
+        # 深拷贝：simulate_battle 会直接改写单位 dict（掉血、加关键词），
+        # 浅拷贝会把战损写回常驻阵容，和 UI 路径（battle.py 用 deepcopy）语义不一致。
+        allies = copy.deepcopy(self.board)
+        result, battle_logs = self.battle_engine.simulate_battle(
+            allies, enemies, self.hero, relic_mods=relic_mods)
         
         logs.extend(battle_logs)
         
@@ -173,6 +182,14 @@ class NodeHandler:
                 self.relics.append(relic)
                 result['relic'] = relic['name']
                 logs.append(f"获得宝物: {relic['name']}！")
+
+        # 宝物：每场战斗后的额外铸币（聚宝袋）
+        if self.relic_system:
+            bonus = self.relic_system.get_battle_gold_bonus()
+            if bonus:
+                self.gold += bonus
+                result['gold_bonus'] = bonus
+                logs.append(f"宝物加成：额外获得 {bonus} 枚铸币！")
         
         return result
     
@@ -200,64 +217,89 @@ class NodeHandler:
             return {'type': 'shop', 'purchased': None}, logs
     
     def _handle_event_node(self, content, logs):
-        """处理事件节点"""
+        """处理事件节点（CLI 路径自动选第一个选项；效果实现与 UI 共用一处）"""
         event_data = content.get('event', {})
-        
+
         if not event_data:
             logs.append("事件数据无效！")
             return None, logs
-        
+
         logs.append(f"遭遇事件: {event_data['name']}")
         logs.append(event_data['description'])
-        
-        # 简化：随机选择第一个选项
+
         options = event_data.get('options', [])
-        if options:
-            option = options[0]
-            logs.append(f"选择: {option['text']}")
+        if not options:
+            logs.append("该事件没有可选项。")
+            return {'type': 'event', 'event_name': event_data['name']}, logs
+
+        option = options[0]
+        logs.append(f"选择: {option['text']}")
+        if option.get('outcome'):
             logs.append(option['outcome'])
-            
-            # 应用选项效果
-            effects = option.get('effects', {})
-            self._apply_event_effects(effects, logs)
-            
-            return {
-                'type': 'event',
-                'event_name': event_data['name'],
-                'option_chosen': option['text']
-            }, logs
-        
-        return {'type': 'event', 'event_name': event_data['name']}, logs
-    
+
+        resolver = self._resolve_effects(option.get('effects', {}))
+        logs.extend(resolver.logs)
+
+        result = {
+            'type': 'event',
+            'event_name': event_data['name'],
+            'option_chosen': option['text'],
+        }
+
+        if resolver.pending_battle:
+            result['battle'] = self._run_event_battle(resolver.pending_battle, logs)
+        if not self._hero_alive():
+            result['hero_dead'] = True
+
+        return result, logs
+
+    def _resolve_effects(self, effects):
+        """事件效果只有一处实现：game/event_effects.py。这里只负责状态搬运。"""
+        resolver = EventEffectResolver(
+            hero=self.hero,
+            hand=self.hand,
+            board=self.board,
+            relics=self.relics,
+            data_loader=self.data_loader,
+            map_manager=getattr(self, 'map_manager', None),
+            gold=self.gold,
+        ).apply(effects)
+        self.gold = resolver.gold
+        return resolver
+
+    def _run_event_battle(self, battle_info, logs):
+        """按事件指定的敌人开战；敌人不存在时响亮跳过（不静默当成功）。"""
+        enemy_id = battle_info.get('enemy')
+        try:
+            enemies_data = self.data_loader('enemies.json') or []
+        except Exception as exc:  # noqa: BLE001
+            logs.append(f"无法读取敌人数据：{exc}")
+            return {'type': 'battle', 'result': 'skipped'}
+        template = next((e for e in enemies_data if e.get('id') == enemy_id), None)
+        if template is None:
+            logs.append(f"事件引用了不存在的敌人 {enemy_id}，已跳过战斗")
+            return {'type': 'battle', 'result': 'skipped'}
+        content = {
+            'enemies': [copy.deepcopy(template)],
+            'rewards': {'gold': bool(battle_info.get('reward_gold'))},
+        }
+        result, _logs = self._handle_battle_node(content, 'event', logs)
+        return result
+
+    def _hero_alive(self):
+        if self.hero is None:
+            return True
+        is_alive = getattr(self.hero, 'is_alive', None)
+        if callable(is_alive):
+            return bool(is_alive())
+        return getattr(self.hero, 'health', 1) > 0
+
     def _apply_event_effects(self, effects, logs):
-        """应用事件效果"""
-        # 治疗
-        if 'heal' in effects:
-            if self.hero:
-                self.hero.heal(effects['heal'])
-                logs.append(f"恢复了 {effects['heal']} 点生命值！")
-        
-        # 伤害
-        if 'damage' in effects:
-            if self.hero:
-                self.hero.take_damage(effects['damage'])
-                logs.append(f"受到 {effects['damage']} 点伤害！")
-        
-        # 获得铸币
-        if 'gain_gold' in effects:
-            self.gold += effects['gain_gold']
-            logs.append(f"获得 {effects['gain_gold']} 枚铸币！")
-        
-        # 获得冒险者
-        if 'gain_adventurer' in effects:
-            adventurer_info = effects['gain_adventurer']
-            # 简化处理
-            adventurers_data = self.data_loader('adventurers.json')
-            if adventurers_data and len(self.hand) < 10:
-                adventurer = random.choice(adventurers_data).copy()
-                self.hand.append(adventurer)
-                logs.append(f"获得冒险者: {adventurer['name']}！")
-    
+        """兼容旧调用点：委托给统一实现。"""
+        resolver = self._resolve_effects(effects)
+        logs.extend(resolver.logs)
+        return resolver
+
     def _handle_camp_node(self, content, logs):
         """处理营地节点"""
         logs.append("发现安全营地...")

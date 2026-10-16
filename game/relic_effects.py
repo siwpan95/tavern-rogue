@@ -1,0 +1,82 @@
+"""宝物效果的登记表与战斗修正构建。
+
+本模块回答两个问题：
+  1. **数据里每个宝物效果有没有实现** —— `SUPPORTED_RELIC_EFFECT_TYPES` 是唯一登记处，
+     测试与设计稿按它校验（历史问题：25 件宝物里有 4 个效果的方法全仓没有调用者）。
+  2. **开战前要把哪些数值交给战斗引擎** —— `build_battle_mods()` 把宝物列表折成
+     引擎消费的修正字典，避免引擎反向依赖 RelicSystem。
+"""
+from __future__ import annotations
+
+# 效果类型 -> 实现落点（新增类型时必须同时补实现、补登记、补用例）
+RELIC_EFFECT_HANDLERS = {
+    "heal_per_turn": "engine.simulate_battle（每回合结束治疗英雄）",
+    "double_attack_chance": "engine._handle_attack（先攻）",
+    "double_damage_once": "engine._handle_attack（每场战斗一次双倍）",
+    "heal_on_kill": "engine._handle_attack（击杀回血）",
+    "deathrattle_double": "engine._handle_death（亡语触发两次）",
+    "global_attack_bonus": "engine._apply_relic_battle_start",
+    "dodge_chance": "engine._try_dodge",
+    "global_dodge": "engine._try_dodge",
+    "tribe_dodge": "engine._try_dodge",
+    "tribe_buff": "engine._apply_relic_battle_start",
+    "tribe_fire_bonus": "engine._handle_battle_start（火焰吐息/龙裔共鸣 +N）",
+    "tribe_death_damage": "engine._handle_death（提夫林阵亡暗影伤害）",
+    "battle_shield_once": "relics.apply_battle_start_effects",
+    "battle_start_damage": "relics.apply_battle_start_effects",
+    "battle_start_buff": "relics.apply_battle_start_effects",
+    "battle_start_lifesteal": "relics.apply_battle_start_effects",
+    "battle_start_debuff": "relics.apply_battle_start_effects",
+    "battle_start_shield_all": "relics.apply_battle_start_effects",
+    "battle_start_random_guard": "relics.apply_battle_start_effects",
+    "extra_gold": "BattleScene._victory / node_handler._apply_battle_rewards",
+    "shop_discount": "GameManager.shop_price",
+    "relic_drop_bonus": "rewards.RewardSystem.generate_battle_rewards",
+    "revive_on_death": "GameManager.damage_hero -> RelicSystem.try_hero_revive",
+}
+
+SUPPORTED_RELIC_EFFECT_TYPES = frozenset(RELIC_EFFECT_HANDLERS)
+
+# 直接作用在单位上的 battle_start_* 家族由 RelicSystem 处理，不进引擎修正字典
+BATTLE_START_EFFECT_TYPES = frozenset({
+    "battle_shield_once", "battle_start_damage", "battle_start_buff",
+    "battle_start_lifesteal", "battle_start_debuff", "battle_start_shield_all",
+    "battle_start_random_guard",
+})
+
+
+def build_battle_mods(relics) -> dict:
+    """把宝物列表折成战斗引擎消费的修正字典（纯函数，不改动入参）。"""
+    mods = {
+        "global_attack_bonus": 0,
+        "dodge_chance": 0.0,
+        "double_attack_chance": 0.0,
+        "double_damage_once": 0,
+        "heal_on_kill": 0,
+        "heal_per_turn": 0,
+        "deathrattle_double": 0,
+        "tribe_fire_bonus": 0,
+        "tribe_death_damage": 0,
+        "tribe_buffs": [],
+        "tribe_dodges": [],
+        "extra_gold": 0,
+        "relic_drop_bonus": 0.0,
+        "shop_discount": 0,
+        "revive_on_death": 0,
+    }
+
+    for relic in relics or []:
+        effect = (relic or {}).get("effect") or {}
+        effect_type = effect.get("type")
+        value = effect.get("value", 0) or 0
+
+        if effect_type in ("dodge_chance", "global_dodge"):
+            mods["dodge_chance"] += float(value)
+        elif effect_type == "tribe_buff":
+            mods["tribe_buffs"].append(dict(effect))
+        elif effect_type == "tribe_dodge":
+            mods["tribe_dodges"].append(dict(effect))
+        elif effect_type in mods and isinstance(mods[effect_type], (int, float)):
+            mods[effect_type] += value
+
+    return mods
