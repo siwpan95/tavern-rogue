@@ -45,7 +45,7 @@ class BattleScene(Scene):
             candidates = [e for e in enemies_data if e.get('is_elite', False) and e.get('tier', 1) <= floor + 2]
             if not candidates:
                 candidates = [e for e in enemies_data if e.get('is_elite', False)] or enemies_data
-            raw = random.sample(candidates, min(2, len(candidates)))
+            raw = random.sample(candidates, min(self.gm.encounter_size('elite'), len(candidates)))
         else:
             candidates = [e for e in enemies_data
                           if not e.get('is_elite', False) and not e.get('is_boss', False)
@@ -53,7 +53,7 @@ class BattleScene(Scene):
             if not candidates:
                 candidates = [e for e in enemies_data
                               if not e.get('is_elite', False) and not e.get('is_boss', False)]
-            raw = random.sample(candidates, min(3, len(candidates)))
+            raw = random.sample(candidates, min(self.gm.encounter_size('normal'), len(candidates)))
 
         self.enemies = self.gm.scale_enemies(copy.deepcopy(raw))
 
@@ -196,6 +196,10 @@ class BattleScene(Scene):
             return
 
         self.messages.append("=== 自动战斗开始 ===")
+        # Boss 战换曲（普通战斗用 scenes.switch_to 里播的 battle BGM）
+        audio = getattr(self.app, 'audio', None)
+        if audio is not None and (self._node or {}).get('type') == 'boss':
+            audio.play_bgm('boss_fight')
         # 宝物修正统一走 relic_mods（闪避/攻击/先攻/吸血/亡语双倍…），
         # 不要再单传 extra_dodge_chance —— 那条路会让同一个宝物效果被算两遍。
         relic_mods = self.gm.relic_system.get_battle_mods() if self.gm.relic_system else {}
@@ -693,6 +697,10 @@ class BattleScene(Scene):
             if self._anim_timer == 0.0 and self._anim_index < len(self._anim_events):
                 ev = self._anim_events[self._anim_index]
                 etype = ev['type']
+                # 音效挂在动画事件分派点上：零侵入，不碰战斗逻辑
+                audio = getattr(self.app, 'audio', None)
+                if audio is not None:
+                    audio.play_event(etype)
                 if etype == 'attack':
                     self._trigger_attack_effect(ev)
                 elif etype == 'dodge':

@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ui.renderer import WIDTH, HEIGHT, ButtonManager, fonts
 from ui.game_manager import GameManager
 from ui.scenes.base import SceneManager
+from game.audio import AudioManager
 from game.persistence import ProgressManager
 
 
@@ -31,6 +32,9 @@ class TavernRogueApp:
         fonts.ensure_init()  # 必须在 pygame.init() 之后
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("TavernRogue - 酒馆异闻录")
+
+        # 音频：只播放离线生成的素材；素材缺失/无设备时静音降级
+        self.audio = AudioManager()
 
         self.clock = pygame.time.Clock()
         self.running = True

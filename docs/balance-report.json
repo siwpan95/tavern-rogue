@@ -1,0 +1,106 @@
+{
+  "tree": {
+    "warrior": {
+      "runs": 40,
+      "victory_rate": 0.8,
+      "avg_floor": 8.0,
+      "avg_battles": 9.925,
+      "battle_win_rate": 0.7556675062972292,
+      "avg_hero_hp": 10.225,
+      "avg_relics": 4.425,
+      "avg_board": 7.0
+    },
+    "rogue": {
+      "runs": 40,
+      "victory_rate": 0.95,
+      "avg_floor": 7.975,
+      "avg_battles": 10.3,
+      "battle_win_rate": 0.7815533980582524,
+      "avg_hero_hp": 11.375,
+      "avg_relics": 5.0,
+      "avg_board": 7.0
+    },
+    "cleric": {
+      "runs": 40,
+      "victory_rate": 0.9,
+      "avg_floor": 7.975,
+      "avg_battles": 10.025,
+      "battle_win_rate": 0.8204488778054863,
+      "avg_hero_hp": 14.375,
+      "avg_relics": 4.825,
+      "avg_board": 7.0
+    },
+    "wizard": {
+      "runs": 40,
+      "victory_rate": 0.925,
+      "avg_floor": 7.975,
+      "avg_battles": 10.2,
+      "battle_win_rate": 0.7598039215686274,
+      "avg_hero_hp": 11.05,
+      "avg_relics": 4.85,
+      "avg_board": 7.0
+    },
+    "warlock": {
+      "runs": 40,
+      "victory_rate": 0.85,
+      "avg_floor": 7.95,
+      "avg_battles": 9.725,
+      "battle_win_rate": 0.7557840616966581,
+      "avg_hero_hp": 10.15,
+      "avg_relics": 4.95,
+      "avg_board": 7.0
+    }
+  },
+  "legacy": {
+    "warrior": {
+      "runs": 40,
+      "victory_rate": 0.925,
+      "avg_floor": 7.95,
+      "avg_battles": 9.875,
+      "battle_win_rate": 0.7670886075949367,
+      "avg_hero_hp": 12.625,
+      "avg_relics": 4.525,
+      "avg_board": 7.0
+    },
+    "rogue": {
+      "runs": 40,
+      "victory_rate": 0.975,
+      "avg_floor": 8.0,
+      "avg_battles": 10.325,
+      "battle_win_rate": 0.7941888619854721,
+      "avg_hero_hp": 12.0,
+      "avg_relics": 4.8,
+      "avg_board": 7.0
+    },
+    "cleric": {
+      "runs": 40,
+      "victory_rate": 0.875,
+      "avg_floor": 8.0,
+      "avg_battles": 10.05,
+      "battle_win_rate": 0.8059701492537313,
+      "avg_hero_hp": 12.95,
+      "avg_relics": 4.975,
+      "avg_board": 7.0
+    },
+    "wizard": {
+      "runs": 40,
+      "victory_rate": 0.875,
+      "avg_floor": 8.0,
+      "avg_battles": 10.225,
+      "battle_win_rate": 0.7921760391198044,
+      "avg_hero_hp": 13.1,
+      "avg_relics": 5.075,
+      "avg_board": 7.0
+    },
+    "warlock": {
+      "runs": 40,
+      "victory_rate": 0.85,
+      "avg_floor": 8.0,
+      "avg_battles": 9.775,
+      "battle_win_rate": 0.7416879795396419,
+      "avg_hero_hp": 10.0,
+      "avg_relics": 4.7,
+      "avg_board": 7.0
+    }
+  }
+}

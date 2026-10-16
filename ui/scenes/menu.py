@@ -19,11 +19,22 @@ class MenuScene(Scene):
         draw_text_centered(self.screen, "酒馆异闻录", 260, 'large')
 
         self.buttons.clear()
-        self.buttons.add(450, 400, 300, 50, "开始游戏",
+        y = 400
+        if self.gm.has_saved_run():
+            self.buttons.add(450, y, 300, 50, "继续冒险", self._continue_run)
+            y += 70
+        self.buttons.add(450, y, 300, 50, "开始游戏",
                          lambda: self.switch_to('class_select'))
-        self.buttons.add(450, 470, 300, 50, "退出游戏",
+        self.buttons.add(450, y + 70, 300, 50, "退出游戏",
                          lambda: setattr(self.app, 'running', False))
         self.buttons.draw_all(self.screen)
+
+    def _continue_run(self):
+        if self.gm.load_run():
+            print("[TavernRogue] 已读取局内存档")
+            self.switch_to('recruit')
+        else:
+            print("[TavernRogue] 没有可继续的存档")
 
 
 class ClassSelectScene(Scene):
@@ -89,5 +100,6 @@ class ClassSelectScene(Scene):
         cls_info = next((c for c in self._classes if c['id'] == hero_class), None)
         if cls_info and cls_info.get('locked', False):
             return
+        self.gm.clear_saved_run()  # 开新局就清掉旧存档，避免「继续冒险」读到上一局
         self.gm.new_game(hero_class)
         self.switch_to('recruit')

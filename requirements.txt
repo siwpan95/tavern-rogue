@@ -1,2 +1,7 @@
-# TavernRogue dependencies (auto-generated 2026-08-20)
-pygame-ce
+# TavernRogue 运行时依赖
+# 装完即可 `python run_gui.py` 开玩；验证用 `python run_tests.py`（另需 requirements-dev.txt）
+pygame-ce>=2.5,<3
+
+# 自研引擎（siwpan / PyPI）：目标选择用它的决策树、战斗审计用 WorldLog、局内存档用 SaveLoadManager。
+# 未安装时游戏会自动降级为仓内等价实现，并在 stderr 出声提示，仍可正常运行。
+allin-engine>=1.0.0

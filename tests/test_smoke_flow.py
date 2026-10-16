@@ -23,12 +23,26 @@ HERO_CLASSES = ["warrior", "rogue", "cleric", "wizard", "warlock"]
 
 
 @pytest.fixture(scope="module")
-def app():
-    application = TavernRogueApp()
-    yield application
-    import pygame
+def app(tmp_path_factory):
+    """整个模块共用一个 headless app；进度与局内存档都指向临时目录，别弄脏本地存档。"""
+    import game.run_save as run_save_module
+    from game.persistence import ProgressManager
 
-    pygame.display.quit()
+    application = TavernRogueApp()
+    tmp = tmp_path_factory.mktemp("tavern_saves")
+    application.progress = ProgressManager(save_file=str(tmp / "progress.json"))
+    application.game.progress = application.progress
+
+    original_dir, original_file = run_save_module.SAVE_DIR, run_save_module.FALLBACK_FILE
+    run_save_module.SAVE_DIR = str(tmp / "runs")
+    run_save_module.FALLBACK_FILE = str(tmp / "runs" / "run_slot0.json")
+    try:
+        yield application
+    finally:
+        run_save_module.SAVE_DIR, run_save_module.FALLBACK_FILE = original_dir, original_file
+        import pygame
+
+        pygame.display.quit()
 
 
 def fresh_game(app, hero_class="warrior"):
@@ -203,6 +217,31 @@ def test_missing_node_does_not_crash_after_node(app):
     game.current_node = None
     app.scenes.current._after_node()
     assert type(app.scenes.current).__name__ == "MapScene"
+
+
+def test_boss_victory_is_reachable(app):
+    """回归：通关曾经不可达 —— current_layer 到 9 封顶，floor > MAX_FLOORS 永不成立。"""
+    game = fresh_game(app)
+    game.ensure_map()
+    data = game.map_manager.map_data
+    boss_layer = next(layer for layer in data["layers"] if layer["type"] == "boss")
+    game.map_manager.current_layer = boss_layer["layer"]
+    node = boss_layer["nodes"][0]
+    game.select_map_node(node["id"])
+    app.scenes.switch_to("map")
+    app.scenes.current._after_node()
+    assert type(app.scenes.current).__name__ == "VictoryScene", "击败最终 Boss 必须能通关"
+
+
+def test_all_layers_completed_also_wins(app):
+    """保险判据：9 层全清也算通关（避免再出现「打完了却走不到结局」）。"""
+    game = fresh_game(app)
+    game.ensure_map()
+    for layer in game.map_manager.map_data["layers"]:
+        for node in layer["nodes"]:
+            node["completed"] = True
+        layer["completed"] = True
+    assert game.is_run_won() is True
 
 
 def test_full_run_playthrough_reaches_an_ending_or_final_layer(app):

@@ -30,11 +30,14 @@
 
 - Python 3.10+
 - pygame-ce
+- （可选）allin-engine —— 未安装时自动降级，游戏照常可玩
 
 ### 安装依赖
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt          # 运行时：pygame-ce + allin-engine
+pip install -r requirements-dev.txt      # 验证：额外装 pytest
+pip install -r requirements-assets.txt   # 可选：生成音频素材（bloodmusic，构建期用）
 ```
 
 ### 运行游戏
@@ -43,43 +46,54 @@ pip install -r requirements.txt
 python run_gui.py
 ```
 
+### 生成音频素材（可选）
+
+音效 / BGM 由自研引擎 **bloodmusic** 离线生成，**不入库**；不生成也能玩（静音降级）。
+
+```bash
+python tools/gen_audio_assets.py            # 38 个音效 + 10 首 BGM
+python tools/gen_audio_assets.py --check    # 只检查素材是否齐备
+```
+
+### 测试
+
+```bash
+python run_tests.py          # 语法 + 数据 + pytest 套件（三层一起跑）
+python run_tests.py --no-pytest
+python -m pytest tests -q    # 只跑用例
+python tools/balance_report.py --runs 40 --ab   # 平衡对拍（无 UI 跑完整局）
+```
+
 ## 项目结构
 
 ```
 TavernRogue/
 ├── run_gui.py                  # 唯一入口，启动图形界面
-├── requirements.txt
+├── run_tests.py                # 测试入口（语法 + 数据 + pytest）
+├── requirements*.txt           # 运行时 / 验证 / 素材生成 三类依赖
+├── pytest.ini
+├── tests/                      # pytest 套件（数据完整性 / 战斗 / 事件 / 宝物 / 存档 / 冒烟）
+├── tools/                      # 构建期与验证工具（不入游戏运行时）
+│   ├── gen_audio_assets.py     #   用 bloodmusic 离线生成音效与 BGM
+│   └── balance_report.py       #   无 UI 批量模拟，出平衡报告
+├── docs/                       # 平衡报告与内容设计稿
 ├── ui/                         # 图形界面层（MVC + Scene 架构）
-│   ├── app.py                  # 应用外壳：pygame 初始化 + 主循环
-│   ├── game_manager.py         # Model：中央状态管理
+│   ├── app.py                  # 应用外壳：pygame 初始化 + 主循环 + 音频
+│   ├── game_manager.py         # Model：中央状态管理（含局内存档）
 │   ├── renderer.py             # View：共享渲染（颜色/字体/按钮/卡片）
 │   └── scenes/                 # Controller：12 个游戏场景
-│       ├── base.py             #   场景基类 + SceneManager
-│       ├── menu.py             #   主菜单 / 职业选择
-│       ├── recruit.py          #   酒馆招募
-│       ├── map_scene.py        #   地图探索
-│       ├── battle.py           #   回合制战斗
-│       ├── shop.py             #   商店
-│       ├── camp.py             #   营地（训练 / 休息）
-│       ├── event_scene.py      #   随机事件
-│       ├── treasure.py         #   宝箱
-│       ├── reward.py           #   战斗奖励
-│       └── end_scenes.py       #   胜利 / 失败
-├── game/                       # 游戏逻辑模块（与 UI 解耦）
+├── game/                       # 游戏逻辑模块（与 UI 解耦，可独立测试）
 │   ├── hero.py                 #   英雄职业系统
-│   ├── engine.py               #   战斗引擎
-│   ├── recruit.py              #   酒馆招募系统
-│   ├── map_manager.py          #   地图管理
-│   ├── node_handler.py         #   节点事件处理
-│   ├── events.py               #   事件系统
-│   ├── relics.py               #   宝物系统
-│   └── rewards.py              #   奖励系统
+│   ├── engine.py               #   战斗引擎（事件队列）
+│   ├── ai_targeting.py         #   目标选择（自研引擎决策树 + 回退规则）
+│   ├── event_effects.py        #   事件效果唯一实现
+│   ├── relic_effects.py        #   宝物效果登记表 + 战斗修正
+│   ├── battle_audit.py         #   战斗审计（WorldLog 旁路）
+│   ├── audio.py                #   音频播放（pygame.mixer；素材离线生成）
+│   ├── run_save.py             #   局内存档（SaveLoadManager）
+│   ├── recruit.py / map_manager.py / node_handler.py / events.py / relics.py / rewards.py
+│   └── persistence.py          #   局外成长存档
 └── data/                       # 游戏数据（JSON 驱动）
-    ├── adventurers.json
-    ├── relics.json
-    ├── enemies.json
-    ├── events.json
-    └── map_templates.json
 ```
 
 ## 架构说明

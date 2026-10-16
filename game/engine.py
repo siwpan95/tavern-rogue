@@ -6,6 +6,8 @@ import json
 import random
 from collections import deque
 
+from game import ai_targeting
+
 
 class BattleEngine:
     """战斗引擎 - 使用事件队列处理后进先出逻辑"""
@@ -23,6 +25,7 @@ class BattleEngine:
         self._tribe_resonance = {}  # 种族共鸣数据，跨方法共享
         self._relic_mods = {}       # 本场战斗的宝物修正（simulate_battle 注入）
         self._double_damage_used = False  # 「每场战斗一次」类宝物的使用标记
+        self.use_ai_targeting = True      # 目标选择走决策树；False = 历史随机规则（对拍用）
         
     def _default_log(self, message):
         """默认日志函数：仅输出到控制台"""
@@ -873,22 +876,30 @@ class BattleEngine:
                 self.process_events()
     
     def _select_target(self, attacker, potential_targets):
-        """选择攻击目标（优先攻击带守卫的单位，飞行单位忽略守卫）"""
+        """选择攻击目标。
+
+        默认走 game/ai_targeting.py 的决策树（复用自研引擎 allin_engine 的决策树原语）：
+        飞行无视守卫 → 守卫里血最少 → 可一击必杀者 → 最脆弱者。
+        `use_ai_targeting = False` 时退化为历史随机规则，供固定种子对拍与回滚。
+        """
         alive_targets = [t for t in potential_targets if t['health'] > 0]
         
         if not alive_targets:
             return None
+
+        if getattr(self, 'use_ai_targeting', True):
+            target = ai_targeting.choose_target(attacker, alive_targets)
+            if target is not None:
+                return target
         
-        # 飞行单位忽略守卫，可以攻击任意目标
+        # 历史规则（对拍基线）
         if 'FLYING' in attacker.get('keywords', []):
             return random.choice(alive_targets)
         
-        # 优先攻击带守卫的目标
         guard_targets = [t for t in alive_targets if 'GUARD' in t.get('keywords', [])]
         if guard_targets:
             return random.choice(guard_targets)
         
-        # 否则随机选择
         return random.choice(alive_targets)
     
     def _get_opponents(self, unit):

@@ -67,17 +67,21 @@ class MapManager:
         }
         
         # 根据层类型生成节点
-        if layer_type == 'fixed':
-            # 固定节点（如营地、Boss）
-            for i in range(node_count):
-                node = self._create_node(layer_info['type'], layer_num, i)
-                layer['nodes'].append(node)
-        else:
+        # 注意：模板里**只有** type == 'random' 的层才是随机节点；其余（camp/boss/treasure…）
+        # 是固定层，节点类型就是层类型。旧版判的是 'fixed'，而这个字符串在模板里根本不存在
+        # → 九层全走随机分支 → 第 1 层不是营地、第 8 层最终 Boss 变成普通小怪、
+        # 第 9 层宝藏密室不存在（2026-10-16 平衡对拍时发现）。
+        if layer_type == 'random':
             # 随机节点
             possible_types = layer_info.get('possible_types', ['monster', 'event'])
             for i in range(node_count):
                 node_type = random.choice(possible_types)
                 node = self._create_node(node_type, layer_num, i)
+                layer['nodes'].append(node)
+        else:
+            # 固定节点（营地、Boss、宝藏密室…）
+            for i in range(node_count):
+                node = self._create_node(layer_type, layer_num, i)
                 layer['nodes'].append(node)
         
         return layer
@@ -171,11 +175,20 @@ class MapManager:
             }
         
         elif node_type == 'boss':
-            # Boss战斗
+            # Boss战斗：优先用模板配置的 boss id；没配就从 is_boss 池里按层数挑一个。
+            # 旧版 `_load_enemy(None)` 会兜底成 enemies_data[0] —— 于是第 7 层的随机 boss
+            # 静默变成一只 1 级哥布林斥候（平衡对拍时发现）。
             boss_id = self.map_templates['layers'][node['layer']-1].get('boss')
+            boss = self._load_enemy(boss_id) if boss_id else None
+            if boss is None:
+                candidates = [e for e in self.data_loader('enemies.json')
+                              if e.get('is_boss') and e.get('tier', 1) <= node['layer'] + 2]
+                if not candidates:
+                    candidates = [e for e in self.data_loader('enemies.json') if e.get('is_boss')]
+                boss = random.choice(candidates).copy()
             return {
                 'type': 'battle',
-                'enemies': [self._load_enemy(boss_id)],
+                'enemies': [boss],
                 'rewards': {
                     'gold': True,
                     'relic': True,
@@ -214,18 +227,33 @@ class MapManager:
         
         return None
     
+    @staticmethod
+    def encounter_size(layer, difficulty='normal'):
+        """遭遇规模随层数增长。
+
+        旧版固定「普通 1-2 个、精英 1 个」，而玩家中后期稳定 7 个单位上场
+        → 7 打 2 必胜，通关率 89%（2026-10-16 平衡对拍）。现在第 9 层普通遭遇 4 个、
+        精英 3 个，和玩家规模同量级。
+        """
+        layer = max(1, int(layer or 1))
+        if difficulty == 'boss':
+            return 1
+        if difficulty == 'elite':
+            return min(1 + (layer - 1) // 3, 3)
+        return min(2 + (layer - 1) // 3, 4)
+
     def _generate_enemies(self, layer, difficulty='normal'):
         """生成敌人"""
         enemies_data = self.data_loader('enemies.json')
         
         if difficulty == 'normal':
-            # 普通怪物：1-2个
-            count = random.randint(1, 2)
+            # 普通怪物：数量随层数增长
+            count = self.encounter_size(layer, 'normal')
             available = [e for e in enemies_data if e['tier'] <= layer]
         elif difficulty == 'elite':
-            # 精英：1个高等级敌人
+            # 精英：高等级敌人，数量随层数增长
             available = [e for e in enemies_data if e['tier'] <= layer + 1]
-            count = 1
+            count = self.encounter_size(layer, 'elite')
         else:
             count = 1
             available = enemies_data
@@ -242,14 +270,14 @@ class MapManager:
         return enemies
     
     def _load_enemy(self, enemy_id):
-        """加载指定敌人"""
+        """按 id 加载敌人；找不到返回 None（由调用方决定兜底，不要静默换成别的怪）。"""
+        if not enemy_id:
+            return None
         enemies_data = self.data_loader('enemies.json')
         for enemy in enemies_data:
             if enemy['id'] == enemy_id:
                 return enemy.copy()
-        
-        # 兜底
-        return enemies_data[0].copy()
+        return None
     
     def _generate_shop_items(self, layer):
         """生成商店物品"""

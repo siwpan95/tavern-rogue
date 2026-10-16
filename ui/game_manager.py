@@ -10,6 +10,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from game.hero import create_hero, get_all_hero_classes
+from game import run_save
 from game.engine import BattleEngine
 from game.recruit import RecruitSystem
 from game.map_manager import MapManager
@@ -31,6 +32,9 @@ class GameManager:
     MAX_BOARD = 7
     MAX_RELICS = 6
     MAX_FLOORS = 9
+    # 层数成长：每深入一层，敌人生命 +7%、攻击 +5%（进阶倍率再乘在这上面）
+    FLOOR_HEALTH_GROWTH = 0.07
+    FLOOR_ATTACK_GROWTH = 0.05
 
     # ─── 与英雄状态同步的代理属性 ───────────────────
 
@@ -91,6 +95,7 @@ class GameManager:
         """开始新游戏，应用当前职业进阶难度参数"""
         self._run_class_id = hero_class
         self._run_victory = False
+        self._boss_defeated = False
         self.hero = create_hero(hero_class)
         self.difficulty_params = self.progress.get_difficulty_params(hero_class)
         # 进阶提供英雄额外生命值
@@ -168,6 +173,20 @@ class GameManager:
         discount = self.relic_system.get_shop_discount() if self.relic_system else 0
         return max(1, int(base_cost) - discount)
 
+    # ─── 局内存档（跑团现场，走自研引擎 SaveLoadManager）────
+
+    def save_run(self) -> bool:
+        return run_save.save_run(self)
+
+    def load_run(self) -> bool:
+        return run_save.load_run(self)
+
+    def has_saved_run(self) -> bool:
+        return run_save.has_saved_run()
+
+    def clear_saved_run(self) -> bool:
+        return run_save.clear_run()
+
     def is_hero_alive(self) -> bool:
         return self.health > 0
 
@@ -228,11 +247,29 @@ class GameManager:
         remaining = [n for n in layer['nodes']
                      if not n['completed'] and n['id'] != node_id]
         was_last = len(remaining) == 0
+        was_boss = (layer.get('type') == 'boss'
+                    and any(n['id'] == node_id and n.get('type') == 'boss'
+                            for n in layer['nodes']))
 
         self.map_manager.complete_node(node_id)
+        if was_boss:
+            self._boss_defeated = True
+            print("[TavernRogue] 最终 Boss 已被击败！")
 
         # 不在此处更新 self.floor，由 advance_floor() 统一处理
         return True, was_last
+
+    def is_run_won(self) -> bool:
+        """通关判据：击败最终 Boss（第 8 层龙穴）；9 层全清作为保险。
+
+        历史缺陷：`current_layer` 到 9 就封顶，`floor > MAX_FLOORS` 永不成立，
+        VictoryScene 没有任何可达路径（2026-10-16 由平衡对拍发现）。
+        """
+        if getattr(self, '_boss_defeated', False):
+            return True
+        data = getattr(self.map_manager, 'map_data', None)
+        layers = (data or {}).get('layers') or []
+        return bool(layers) and all(layer.get('completed') for layer in layers)
 
     def is_layer_completed(self):
         layer = self.get_current_layer()
@@ -341,17 +378,29 @@ class GameManager:
 
     # ─── 局外成长对接 ───────────────────────────────
 
+    def encounter_size(self, difficulty: str = 'normal') -> int:
+        """本层遭遇的敌人数量（与 MapManager 用同一公式，保证 UI 与 CLI 一致）。"""
+        return MapManager.encounter_size(self.floor, difficulty)
+
     def scale_enemies(self, enemies: list) -> list:
-        """根据当前进阶难度缩放敌人属性"""
-        if not self.difficulty_params:
-            return enemies
-        mult_hp = self.difficulty_params.get('enemy_health_mult', 1.0)
-        mult_atk = self.difficulty_params.get('enemy_attack_mult', 1.0)
+        """按「层数成长 × 进阶难度」缩放敌人属性。
+
+        历史缺陷：缩放只看进阶倍率 —— 进阶 0 时敌人**完全不随层数成长**，
+        于是第 8/9 层与第 2 层一样软，平衡对拍显示通关率 89%（2026-10-16）。
+        现在改为两层叠加：层数成长给基线曲线，进阶倍率在其上再乘。
+        """
+        floor = max(1, int(self.floor or 1))
+        mult_hp = 1.0 + self.FLOOR_HEALTH_GROWTH * (floor - 1)
+        mult_atk = 1.0 + self.FLOOR_ATTACK_GROWTH * (floor - 1)
+        if self.difficulty_params:
+            mult_hp *= self.difficulty_params.get('enemy_health_mult', 1.0)
+            mult_atk *= self.difficulty_params.get('enemy_attack_mult', 1.0)
         scaled = []
         for e in enemies:
             copy = e.copy()
-            copy['health'] = int(round(copy.get('health', 1) * mult_hp))
-            copy['attack'] = int(round(copy.get('attack', 1) * mult_atk))
+            copy['health'] = max(1, int(round(copy.get('health', 1) * mult_hp)))
+            copy['max_health'] = max(copy['health'], int(round(copy.get('max_health', copy['health']) * mult_hp)))
+            copy['attack'] = max(1, int(round(copy.get('attack', 1) * mult_atk)))
             scaled.append(copy)
         return scaled
 

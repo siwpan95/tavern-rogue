@@ -1,0 +1,3 @@
+# 开发/验证依赖（跑 tests/ 套件用）
+-r requirements.txt
+pytest>=8

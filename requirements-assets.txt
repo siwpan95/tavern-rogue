@@ -1,0 +1,8 @@
+# 音频素材生成依赖（**构建期**，不进游戏运行时）
+#
+#   pip install -r requirements-assets.txt
+#   python tools/gen_audio_assets.py
+#
+# 生成结果是 assets/audio/ 下的 wav（不入库，.gitignore 已排除）；
+# 运行时只靠 pygame.mixer 播放，不需要 numpy/scipy，也没有 5 秒级冷启动。
+bloodmusic>=2.0.0

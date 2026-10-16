@@ -57,6 +57,11 @@ class Scene:
             self.switch_to('map')
             return
         ok, layer_done = self.gm.complete_node(current['id'])
+        self.gm.save_run()  # 每个节点结算后自动存档（局内存档，与局外进度分目录）
+
+        if self.gm.is_run_won():
+            self.switch_to('victory')
+            return
         if layer_done:
             self.gm.advance_floor()
             if self.gm.floor > self.gm.MAX_FLOORS:
@@ -91,6 +96,11 @@ class SceneManager:
         # 每次切换创建新实例（保证状态干净）
         self._current = self._scenes[name](self.app, self.gm)
         self._current.enter(**kwargs)
+
+        # 场景 BGM（单点接入：所有切换都走这里）
+        audio = getattr(self.app, 'audio', None)
+        if audio is not None:
+            audio.play_bgm(name)
 
     @property
     def current(self) -> Scene:

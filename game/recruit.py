@@ -97,11 +97,6 @@ class RecruitSystem:
         adventurer = self.tavern_pool[index]
         cost = adventurer.get('cost', self.recruit_cost)
         
-        # 检查术士的生命分流
-        if hasattr(self.hero, 'can_use_life_tap') and self.hero.can_use_life_tap(cost):
-            # 可以选择使用生命分流
-            return "可以使用生命分流（消耗2点生命值代替1枚铸币）"
-        
         # 正常购买
         if self.gold >= cost:
             self.gold -= cost
@@ -109,8 +104,14 @@ class RecruitSystem:
             self.hand.append(adventurer_copy)
             self.tavern_pool.pop(index)
             return f"成功招募 {adventurer['name']}！剩余铸币: {self.gold}"
-        else:
-            return f"铸币不足！需要 {cost} 枚，当前 {self.gold} 枚"
+
+        # 铸币不足时才提示术士的生命分流。
+        # 旧版把这段判定放在购买之前并直接 return —— 术士只要血量够就**永远买不到东西**
+        # （2026-10-16 平衡对拍发现：术士场上单位 3.6 vs 其他职业 7.0、战斗胜率 30%）。
+        if hasattr(self.hero, 'can_use_life_tap') and self.hero.can_use_life_tap(cost):
+            return (f"铸币不足！可改用生命分流（消耗 {cost * 2} 点生命值）"
+                    f"，打开「生命分流」按钮后再购买")
+        return f"铸币不足！需要 {cost} 枚，当前 {self.gold} 枚"
     
     def use_life_tap(self, index):
         """使用生命分流购买冒险者"""
