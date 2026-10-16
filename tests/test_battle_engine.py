@@ -245,6 +245,7 @@ def test_enemy_battle_start_heal_all():
 
 
 def test_cleric_resurrects_once_per_battle():
+    """牧师复活：每场一次，且只恢复 50% 生命（平衡实测：满血复活 = 白送一个单位）。"""
     hero = create_hero("cleric")
     hero.has_healing_word = True
     engine = make_engine(hero=hero)
@@ -254,13 +255,51 @@ def test_cleric_resurrects_once_per_battle():
     }
     engine.add_event({"type": "death", "unit": fallen, "side": "ally"})
     engine.process_events()
-    assert fallen["health"] == 4, "牧师应把阵亡友军救回满血"
+    assert fallen["health"] == 2, "牧师应把阵亡友军以 50% 生命救回"
     assert hero.has_healing_word is False, "治疗祷言每场战斗只能用一次"
 
     fallen["health"] = 0
     engine.add_event({"type": "death", "unit": fallen, "side": "ally"})
     engine.process_events()
     assert fallen["health"] == 0
+
+
+def test_rogue_passive_grants_initiative():
+    """游荡者被动「敏捷+3」→ 全队先攻 +2（此前被动只写在界面上，代码里没有）。"""
+    hero = create_hero("rogue")
+    engine = make_engine(hero=hero)
+    allies = [make_unit("甲", 5, 2, initiative=10), make_unit("乙", 5, 2, initiative=8)]
+    enemies = [make_unit("敌", 5, 2, initiative=9)]
+    engine.simulate_battle(allies, enemies, hero)
+    assert [a["initiative"] for a in allies] == [12, 10]
+
+
+def test_class_passives_are_implemented():
+    """五个职业的被动必须真的存在（界面文案曾与代码不符）。"""
+    assert create_hero("warrior").max_health == 33
+    assert create_hero("rogue").PASSIVE_INITIATIVE_BONUS == 2
+    assert create_hero("cleric").max_health == 33
+    assert create_hero("wizard").MISSILE_DAMAGE == 5
+    warlock = create_hero("warlock")
+    assert warlock.max_health == 28
+    assert warlock.PASSIVE_ATTACK_BONUS == 1
+
+
+def test_warlock_passive_buffs_team_attack():
+    """术士以 −3 生命为代价换全队 +1 攻击（改前它战斗面零贡献，是最弱职业）。"""
+    hero = create_hero("warlock")
+    engine = make_engine(hero=hero)
+    allies = [make_unit("甲", 5, 2), make_unit("乙", 5, 3)]
+    enemies = [make_unit("敌", 5, 2)]
+    engine.simulate_battle(allies, enemies, hero)
+    assert [a["attack"] for a in allies] == [3, 4]
+
+
+def test_wizard_missile_damage_scales_with_passive():
+    hero = create_hero("wizard")
+    enemies = [make_unit("敌A", 10, 1), make_unit("敌B", 10, 1)]
+    hero.use_skill({"allies": [], "enemies": enemies})
+    assert sum(10 - e["health"] for e in enemies) == hero.MISSILE_DAMAGE
 
 
 # ─── 种族共鸣 ─────────────────────────────────────────────

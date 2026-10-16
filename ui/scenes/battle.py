@@ -367,6 +367,12 @@ class BattleScene(Scene):
     def _set_battle_result(self, result):
         """设置战斗结算阶段"""
         self.gm.record_battle(result, (self._node or {}).get('type'))
+        # 战斗结束钩子（牧师被动回血等）；CLI 路径在 node_handler 里同样调用
+        hero = self.gm.hero
+        if hero is not None and hasattr(hero, 'on_battle_end'):
+            healed = hero.on_battle_end()
+            if healed:
+                self.messages.append(f"[被动] 战斗后恢复 {healed} 点生命")
         if result == 'ally':
             self.phase = 'victory'
             self.messages.append("=== 战斗胜利！ ===")

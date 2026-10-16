@@ -117,8 +117,22 @@ class NodeHandler:
         # 深拷贝：simulate_battle 会直接改写单位 dict（掉血、加关键词），
         # 浅拷贝会把战损写回常驻阵容，和 UI 路径（battle.py 用 deepcopy）语义不一致。
         allies = copy.deepcopy(self.board)
+
+        # 英雄技能：CLI/对拍路径也要用（与 UI 的准备阶段等价），每场战斗重置一次
+        if self.hero is not None and hasattr(self.hero, 'use_skill'):
+            self.hero.reset_skill()
+            skill_message = self.hero.use_skill({'allies': allies, 'enemies': enemies})
+            if skill_message:
+                logs.append(f"[技能] {skill_message}")
+
         result, battle_logs = self.battle_engine.simulate_battle(
             allies, enemies, self.hero, relic_mods=relic_mods)
+
+        # 战斗结束钩子（牧师被动回血等）
+        if self.hero is not None and hasattr(self.hero, 'on_battle_end'):
+            healed = self.hero.on_battle_end()
+            if healed:
+                logs.append(f"[被动] 战斗后恢复 {healed} 点生命")
         
         logs.extend(battle_logs)
         

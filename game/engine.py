@@ -459,6 +459,27 @@ class BattleEngine:
                           if stat in ('attack', 'health')
                           else f"宝物加成：{hit} 名 {tribe} 冒险者获得 {stat}")
 
+    def _apply_hero_passives(self, allies, hero):
+        """英雄被动里能落到战斗上的部分。
+
+        · 游荡者「敏捷+3」→ 全队先攻 +2
+        · 术士「以血为契」→ 全队攻击 +1（代价是最大生命 −3）
+        """
+        if hero is None:
+            return
+        initiative = int(getattr(hero, 'PASSIVE_INITIATIVE_BONUS', 0) or 0)
+        if initiative > 0:
+            for ally in allies:
+                ally['initiative'] = ally.get('initiative', 10) + initiative
+            self._log(f"{hero.name} 的敏捷让全队先攻 +{initiative}")
+
+        attack = int(getattr(hero, 'PASSIVE_ATTACK_BONUS', 0) or 0)
+        if attack > 0:
+            for ally in allies:
+                if ally.get('health', 0) > 0:
+                    ally['attack'] = ally.get('attack', 0) + attack
+            self._log(f"{hero.name} 的以血为契让全队攻击 +{attack}")
+
     def _apply_heal_per_turn(self, hero):
         """宝物：每回合结束恢复英雄生命（再生护符）。"""
         if hero is None:
@@ -556,9 +577,17 @@ class BattleEngine:
         
         # 消耗治疗祷言
         hero.has_healing_word = False
+        # 只恢复 50% 生命 + 以 2 点英雄生命为引
+        # （平衡实测：每场一次的"白送单位"让牧师通关率高出其他职业 10-19pp；
+        #   满血复活更高。代价落在英雄血线上，正好与"牧师最耐打"互相抵消。）
+        ratio = float(getattr(hero, 'REVIVE_HEALTH_RATIO', 0.5) or 0.5)
+        cost = int(getattr(hero, 'REVIVE_HEALTH_COST', 0) or 0)
         max_hp = unit.get('max_health', unit.get('health', 1))
-        unit['health'] = max_hp
-        self._log(f"{hero.name} 的治疗祷言复活了 {unit['name']}（HP: {max_hp}）")
+        unit['health'] = max(1, int(round(max_hp * ratio)))
+        if cost:
+            hero.take_damage(cost)
+        self._log(f"{hero.name} 的治疗祷言救回了 {unit['name']}"
+                  f"（HP: {unit['health']}/{max_hp}，自身 -{cost}）")
         return True
     
     def _trigger_blood_fury(self, dead_unit, dead_side):
@@ -796,6 +825,8 @@ class BattleEngine:
 
         # 宝物：全局攻击加成 + 种族专属加成（只作用于本次战斗的副本）
         self._apply_relic_battle_start(allies)
+        # 英雄被动：游荡者的「敏捷」= 全队先攻加成
+        self._apply_hero_passives(allies, hero)
         
         self._log("=== 战斗开始 ===")
         

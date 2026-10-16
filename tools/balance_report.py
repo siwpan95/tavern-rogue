@@ -48,7 +48,11 @@ def _sync_from_handler(game):
 
 
 def _recruit_phase(game):
-    """招募策略：买得起就买最便宜的，然后把手牌铺满场上。"""
+    """招募策略：买得起就买最便宜的，然后把手牌铺满场上。
+
+    术士的血量够时用「生命分流」补足铸币差额 —— 否则测出来的术士强度是失真的
+    （它的职业机制在这个口径下完全没被使用）。
+    """
     game.start_recruit_turn()
     pool = getattr(game.recruit_system, "tavern_pool", [])
     for _ in range(len(pool) + 2):
@@ -57,6 +61,9 @@ def _recruit_phase(game):
         affordable = [(index, card) for index, card in enumerate(game.recruit_system.tavern_pool)
                       if card.get("cost", 3) <= game.gold]
         if not affordable:
+            # 术士：金币不够但血量够 → 生命分流买下最便宜的一张
+            if _try_life_tap(game):
+                continue
             if game.gold >= 1 and not game.hand:
                 game.recruit_system.refresh()
                 continue
@@ -68,6 +75,28 @@ def _recruit_phase(game):
     for _ in range(len(game.hand)):
         game.recruit_system.deploy_to_board(0)
     game.end_recruit_turn()
+
+
+def _try_life_tap(game) -> bool:
+    """术士生命分流：只在"血量安全 + 真的买得起"时使用。"""
+    hero = game.hero
+    if not hasattr(hero, "use_life_tap"):
+        return False
+    pool = getattr(game.recruit_system, "tavern_pool", [])
+    if not pool:
+        return False
+    cheapest = min(range(len(pool)), key=lambda i: pool[i].get("cost", 3))
+    cost = pool[cheapest].get("cost", 3)
+    # 保留至少 6 点血做容错（保守但不过度自残：真人玩家大致也在这个区间）
+    if hero.health - cost * 2 < 6:
+        return False
+    if not hero.can_use_life_tap(cost):
+        return False
+    message = game.recruit_system.use_life_tap(cheapest)
+    if not message.startswith("使用生命分流"):
+        return False
+    game.recruit_system.deploy_to_board(0)
+    return True
 
 
 def _pick_node(layer):

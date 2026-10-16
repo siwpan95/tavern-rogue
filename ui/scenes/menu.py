@@ -44,11 +44,11 @@ class ClassSelectScene(Scene):
         super().enter(**kwargs)
         self._classes = self.gm.progress.get_available_classes()
         self._descriptions = {
-            'warrior': '被动: 生命值+5, 技能: 战争咆哮（守卫+2HP）',
-            'rogue': '被动: 敏捷+3, 技能: 暗影突袭（2点伤害）',
-            'cleric': '被动: 治疗+3, 技能: 治疗祷言（拯救阵亡友军）',
-            'wizard': '被动: 法力+5, 技能: 魔法飞弹（3点AOE）',
-            'warlock': '被动: 生命值-3, 技能: 生命分流（HP代金）',
+            'warrior': '被动: 生命值+3, 技能: 战争咆哮（守卫+2HP）',
+            'rogue': '被动: 敏捷+3（全队先攻+2）, 技能: 暗影突袭（2点伤害）',
+            'cleric': '被动: 生命值+3, 技能: 治疗祷言（每战一次救回友军，耗1生命）',
+            'wizard': '被动: 法力+5（飞弹 5 点）, 技能: 魔法飞弹（由敌人分摊）',
+            'warlock': '被动: 生命值-2、全队攻击+1, 技能: 生命分流（HP代金）',
         }
         self._base_descriptions = {k: v.split('（')[0] for k, v in self._descriptions.items()}
 
