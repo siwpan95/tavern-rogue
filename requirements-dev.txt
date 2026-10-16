@@ -2,3 +2,4 @@
 -r requirements.txt
 pytest>=8
 pyflakes>=3        # run_tests.py 的静态检查（死代码/未定义名）；未装会出声 SKIP
+pytest-cov>=5      # 覆盖率报告（可选，基线约 64%，暂不设阈值）

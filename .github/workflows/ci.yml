@@ -1,0 +1,42 @@
+name: tests
+
+# TavernRogue 的质量门禁：语法/静态/数据/pytest 四层 + 环境自检。
+# 本地等价命令：`python run_tests.py`（CI 跑的就是它，避免"CI 与本地不一致"）。
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: ${{ matrix.os }} · py${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.12", "3.14"]
+    env:
+      # 无显示器/无声卡也能跑完整套件
+      SDL_VIDEODRIVER: dummy
+      SDL_AUDIODRIVER: dummy
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: 安装依赖（运行时 + 开发）
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements-dev.txt
+
+      - name: 四层检查（语法 + pyflakes + 数据 + pytest）
+        run: python run_tests.py
+
+      - name: 环境与素材自检（无头启动冒烟）
+        run: python tools/doctor.py --headless
+
+      - name: 覆盖率报告（不设阈值，仅记录基线）
+        run: python -m pytest tests -q --cov=game --cov=ui --cov-report=term

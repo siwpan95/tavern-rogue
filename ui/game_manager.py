@@ -44,6 +44,15 @@ class GameManager:
     FLOOR_ATTACK_GROWTH = 0.04   # 每层敌人攻击 +4%
 
     # ─── 与英雄状态同步的代理属性 ───────────────────
+    #
+    # 注意：上限必须取**英雄自己的 max_health**，不能用类常量 MAX_HEALTH。
+    # 历史缺陷：setter 用 `min(value, self.MAX_HEALTH)` 钳制，而战士/牧师的被动
+    # 生命 +3 让 max_health=33 —— 开局 `self.health = self.hero.health` 被钳回 30，
+    # 被动被静默吞掉，且治疗后永远回不到 33（2026-10-16 由 tools/doctor.py 抓到）。
+
+    @property
+    def max_health(self) -> int:
+        return self.hero.max_health if self.hero else self.MAX_HEALTH
 
     @property
     def health(self) -> int:
@@ -51,7 +60,8 @@ class GameManager:
 
     @health.setter
     def health(self, value: int):
-        value = max(0, min(value, self.MAX_HEALTH))
+        ceiling = self.hero.max_health if self.hero else self.MAX_HEALTH
+        value = max(0, min(int(value), ceiling))
         if self.hero:
             self.hero.health = value
         self._health = value
@@ -233,7 +243,7 @@ class GameManager:
     def heal_hero(self, amount: int) -> int:
         """治疗英雄, 返回实际治疗量"""
         old = self.health
-        self.health = min(self.health + amount, self.MAX_HEALTH)
+        self.health = min(self.health + amount, self.max_health)
         return self.health - old
 
     def damage_hero(self, amount: int) -> int:

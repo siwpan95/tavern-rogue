@@ -27,10 +27,10 @@ class CampScene(Scene):
                 "你找到了一个安全的营地，可以在此休息或训练", True, COLORS['text_secondary'])
             self.screen.blit(desc, desc.get_rect(center=(600, 120)))
 
-            heal_amt = min(15, self.gm.MAX_HEALTH - self.gm.health)
+            heal_amt = min(15, self.gm.max_health - self.gm.health)
             fs = fonts.get('medium')
             self.screen.blit(fs.render(
-                f"恢复 {heal_amt} 点生命值 (当前: {self.gm.health}/{self.gm.MAX_HEALTH})",
+                f"恢复 {heal_amt} 点生命值 (当前: {self.gm.health}/{self.gm.max_health})",
                 True, COLORS['health']), (300, 200))
 
             self.buttons.add(350, 270, 500, 50,

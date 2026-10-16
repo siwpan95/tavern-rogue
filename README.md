@@ -77,18 +77,30 @@ python run_gui.py --mutator one_hp --mutator midas   # 一击必死 + 点金
 ### 测试
 
 ```bash
-python run_tests.py          # 语法 + 数据 + pytest 套件（三层一起跑）
-python run_tests.py --no-pytest
+pip install -r requirements-dev.txt   # pytest + pyflakes + pytest-cov
+python run_tests.py          # 四层：语法 → pyflakes 静态检查 → JSON 数据 → pytest
+python run_tests.py --no-lint
 python -m pytest tests -q    # 只跑用例
-python tools/balance_report.py --runs 40 --ab   # 平衡对拍（无 UI 跑完整局）
+python -m pytest tests -q --cov=game --cov=ui   # 覆盖率（基线约 64%）
+python tools/doctor.py --headless   # 环境/素材自检 + 无头启动冒烟
+python tools/balance_report.py --runs 100 --ab   # 平衡对拍（无 UI 跑完整局，含死亡层数分布）
 ```
+
+### 持续集成
+
+CI 跑的就是本地那一条命令，避免"CI 与本地不一致"：
+
+| 环境 | 配置 | 命令 |
+| --- | --- | --- |
+| GitHub | `.github/workflows/ci.yml`（ubuntu + windows × py3.12 / 3.14） | `python run_tests.py` + `python tools/doctor.py --headless` |
+| Gitee Go | 流水线里加一个「执行命令」步骤 | 同上（本仓主仓在 Gitee；GitHub 工作流留作镜像/备份） |
 
 ## 项目结构
 
 ```
 TavernRogue/
 ├── run_gui.py                  # 唯一入口，启动图形界面
-├── run_tests.py                # 测试入口（语法 + 数据 + pytest）
+├── run_tests.py                # 测试入口（语法 + pyflakes + 数据 + pytest 四层）
 ├── requirements*.txt           # 运行时 / 验证 / 素材生成 三类依赖
 ├── pytest.ini
 ├── tests/                      # pytest 套件（数据完整性 / 战斗 / 事件 / 宝物 / 存档 / 冒烟）

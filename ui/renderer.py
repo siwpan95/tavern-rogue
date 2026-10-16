@@ -238,7 +238,7 @@ def draw_status_bar(screen, game_manager):
 
     items = [
         (f"英雄: {game_manager.hero.hero_class}", 100, COLORS['text_primary']),
-        (f"生命: {game_manager.health}/{game_manager.MAX_HEALTH}", 280, COLORS['health']),
+        (f"生命: {game_manager.health}/{game_manager.max_health}", 280, COLORS['health']),
         (f"金币: {game_manager.gold}", 460, COLORS['gold']),
         (f"层数: {game_manager.floor}", 600, COLORS['text_secondary']),
         (f"手牌: {len(game_manager.hand)}/{game_manager.MAX_HAND}", 740, COLORS['mana']),
