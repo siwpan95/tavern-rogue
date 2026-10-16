@@ -148,11 +148,22 @@ class GameManager:
     # ─── 铸币经济 ──────────────────────────────────
 
     def award_turn_gold(self) -> int:
-        """发放回合铸币: 3 + 层数, 上限 10"""
-        turn_gold = 3 + self.floor
+        """发放回合铸币: 3 + 层数 + 人类共鸣加成，上限 10"""
+        turn_gold = 3 + self.floor + self.tribe_gold_bonus()
         old = self.gold
         self.gold = min(self.gold + turn_gold, self.MAX_GOLD)
         return self.gold - old
+
+    def tribe_gold_bonus(self) -> int:
+        """人类共鸣：场上人类每 2 个 +1 铸币（上限 +3，与共鸣 2/4/6 三档一致）。
+
+        按**当前场上阵容**实时计算（而不是读上一场战斗留下的共鸣快照），
+        这样"卖掉人类"立刻生效，玩家能看见因果。
+        """
+        humans = sum(1 for unit in self.board if unit.get('tribe') == 'human')
+        if humans < 2:
+            return 0
+        return min(humans // 2, 3)
 
     def spend_gold(self, amount: int) -> bool:
         """花费铸币, 返回是否成功"""

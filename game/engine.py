@@ -8,6 +8,14 @@ from collections import deque
 
 from game import ai_targeting
 
+# 半兽人共鸣档位表：等级 -> (暴击几率, 伤害倍率)
+# 期望倍率 1.125 / 1.32 / 1.72 —— 每档倍率 1.17 / 1.30（深档递减，避免 6 档成为唯一正解）
+HALF_ORC_CRIT = {
+    1: (0.25, 1.5),
+    2: (0.40, 1.8),
+    3: (0.60, 2.2),
+}
+
 
 class BattleEngine:
     """战斗引擎 - 使用事件队列处理后进先出逻辑"""
@@ -256,11 +264,22 @@ class BattleEngine:
             damage *= 2
             self._log(f"{attacker['name']} 的狂战士药剂生效！本次伤害翻倍")
 
-        # 半兽人种族共鸣：25% 几率造成双倍伤害
+        # 半兽人种族共鸣：按档位缩放暴击几率与倍率
         half_orc_chance = self._tribe_resonance.get('half_orc_double_chance', 0)
         if half_orc_chance > 0 and random.random() < half_orc_chance:
-            damage *= 2
-            self._log(f"{attacker['name']} 的半兽人共鸣触发！造成双倍伤害！")
+            multiplier = float(self._tribe_resonance.get('half_orc_multiplier', 2.0))
+            damage = int(round(damage * multiplier))
+            self._log(f"{attacker['name']} 的半兽人共鸣触发！造成 {multiplier} 倍伤害！")
+
+        # 矮人种族共鸣：首个战斗回合减伤（抗爆发起手）
+        turn_index = (getattr(self, '_last_battle_state', None) or {}).get('turn', 0)
+        if turn_index == 0 and defender.get('tribe') == 'dwarf':
+            reduction = int(self._tribe_resonance.get('dwarf_first_round_reduction', 0) or 0)
+            if reduction > 0:
+                reduced = min(damage, reduction)
+                damage -= reduced
+                if reduced:
+                    self._log(f"{defender['name']} 的矮人共鸣减免了 {reduced} 点伤害")
 
         # 应用伤害
         defender['health'] -= damage
@@ -945,11 +964,16 @@ class BattleEngine:
                 self._apply_tribe_resonance(t, units, level, enemies)
 
     def _apply_tribe_resonance(self, tribe, units, level, enemies=None):
-        """应用种族共鸣效果 — 立即生效的修改单位属性，延迟效果存入 _tribe_resonance"""
+        """应用种族共鸣效果 — 立即生效的修改单位属性，延迟效果存入 _tribe_resonance
+
+        **档位必须可感知**：人类/矮人/半兽人此前 2/4/6 档完全同效（等于"凑够就完事"，
+        玩家没有"要不要凑 4 档"的决策）。现在这三个种族按档位线性/表驱动缩放。
+        """
         if tribe == 'human':
-            # 人类：每回合第一次刷新酒馆免费 — 标记供招募系统读取
+            # 人类：每回合第一次刷新酒馆免费 + 每回合额外铸币（1/2/3）
             self._tribe_resonance['human_free_refresh'] = True
-            self._log(f"人类共鸣 (等级 {level}): 每回合第一次刷新酒馆免费")
+            self._tribe_resonance['human_gold_per_turn'] = level
+            self._log(f"人类共鸣 (等级 {level}): 每回合额外 +{level} 铸币，首次刷新免费")
 
         elif tribe == 'elf':
             # 精灵：冒险者获得敏捷（20%闪避）+ 额外闪避几率
@@ -962,12 +986,13 @@ class BattleEngine:
             self._log(f"精灵共鸣 (等级 {level}): 精灵冒险者获得敏捷")
 
         elif tribe == 'dwarf':
-            # 矮人：冒险者获得护甲
+            # 矮人：冒险者获得护甲 + 首个战斗回合减伤（2/3/4，抗爆发起手）
             for unit in units:
                 if unit.get('tribe') == 'dwarf':
                     if 'ARMOR' not in unit.get('keywords', []):
                         unit.setdefault('keywords', []).append('ARMOR')
-            self._log(f"矮人共鸣 (等级 {level}): 矮人冒险者获得护甲")
+            self._tribe_resonance['dwarf_first_round_reduction'] = level + 1
+            self._log(f"矮人共鸣 (等级 {level}): 矮人获得护甲，首个回合受伤 -{level + 1}")
 
         elif tribe == 'dragonborn':
             # 龙裔：战斗开始时对随机敌人造成火焰伤害
@@ -975,9 +1000,11 @@ class BattleEngine:
             self._log(f"龙裔共鸣 (等级 {level}): 战斗开始时造成 {level} 点火焰伤害")
 
         elif tribe == 'half_orc':
-            # 半兽人：25%几率造成双倍伤害（对所有友军生效）
-            self._tribe_resonance['half_orc_double_chance'] = 0.25
-            self._log(f"半兽人共鸣 (等级 {level}): 25% 几率造成双倍伤害")
+            # 半兽人：暴击几率与倍率都随档位提升（1/2/3 档 → 见 HALF_ORC_CRIT）
+            chance, multiplier = HALF_ORC_CRIT.get(level, HALF_ORC_CRIT[1])
+            self._tribe_resonance['half_orc_double_chance'] = chance
+            self._tribe_resonance['half_orc_multiplier'] = multiplier
+            self._log(f"半兽人共鸣 (等级 {level}): {chance:.0%} 几率造成 {multiplier} 倍伤害")
 
         elif tribe == 'tiefling':
             # 提夫林：友军死亡时对敌人造成暗影伤害

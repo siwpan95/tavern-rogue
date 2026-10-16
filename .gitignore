@@ -21,3 +21,9 @@ game_sfx/
 
 # 第三方源码副本（自研 AI 后端不在此列 —— 它在 game/ai_backend/，必须入库）
 third_party/
+
+# 内置中文字体（50 MiB 级资产）：不入库，用 `python tools/fetch_font.py` 下载到 assets/fonts/
+BaoCanMouHuiTingShouXieTi2.0-2.ttf
+assets/fonts/*.ttf
+assets/fonts/*.otf
+assets/fonts/*.part

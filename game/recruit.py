@@ -66,9 +66,10 @@ class RecruitSystem:
         self.tavern_pool = random.sample(available, num_candidates)
     
     def refresh(self):
-        """刷新酒馆（花费1铸币）"""
-        # 检查人类共鸣（每回合第一次刷新免费）
-        if self.free_refresh_available and self._has_tribe_on_board('human'):
+        """刷新酒馆（花费1铸币；人类共鸣 2 档起每回合第一次免费）"""
+        # 人类共鸣：至少要 2 个人类（共鸣 1 档）才生效 —— 旧版只要场上有 1 个人类就免费，
+        # 与"共鸣需要 2/4/6 个"的规则不一致。
+        if self.free_refresh_available and self._tribe_count('human') >= 2:
             self.free_refresh_available = False
             self._refresh_tavern_pool()
             return "人类共鸣触发！刷新酒馆免费！"
@@ -248,6 +249,10 @@ class RecruitSystem:
     def _has_tribe_on_board(self, tribe):
         """检查场上是否有指定种族的单位"""
         return any(a.get('tribe') == tribe for a in self.board)
+
+    def _tribe_count(self, tribe):
+        """场上指定种族的单位数量（共鸣按 2/4/6 计数）"""
+        return sum(1 for a in self.board if a.get('tribe') == tribe)
     
     def upgrade_tavern(self):
         """提升酒馆等级"""

@@ -55,6 +55,16 @@ python tools/gen_audio_assets.py            # 38 个音效 + 10 首 BGM
 python tools/gen_audio_assets.py --check    # 只检查素材是否齐备
 ```
 
+### 获取内置中文字体（可选）
+
+手写体 `BaoCanMouHuiTingShouXieTi2.0-2.ttf` 有 50.5 MiB，**不入库**；缺失时自动回退系统
+CJK 字体（微软雅黑/黑体/Noto）并出声提示，界面不会崩。
+
+```bash
+python tools/fetch_font.py            # 下载到 assets/fonts/（带 sha256 校验）
+python tools/fetch_font.py --check    # 只检查是否就位
+```
+
 ### 测试
 
 ```bash

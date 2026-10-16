@@ -1,6 +1,9 @@
 """
 共享渲染器 — 提取所有绘制原语，避免各 Scene 重复实现
 """
+import os
+import sys
+
 import pygame
 
 
@@ -28,6 +31,18 @@ WIDTH, HEIGHT = 1200, 800
 
 # ─── 字体管理 ─────────────────────────────────────
 
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FONT_FILENAME = "BaoCanMouHuiTingShouXieTi2.0-2.ttf"
+# 字体是 50 MiB 级资产，**不入库**（`tools/fetch_font.py` 下载）。查找顺序：
+#   1) assets/fonts/（下载后的规范位置） 2) 仓根（老位置的本地副本）
+#   3) 系统 CJK 字体  4) pygame 默认字体（无中文字形，会显示方块 → 出声警告）
+FONT_SEARCH_PATHS = (
+    os.path.join(REPO_ROOT, "assets", "fonts", FONT_FILENAME),
+    os.path.join(REPO_ROOT, FONT_FILENAME),
+)
+SYSTEM_FONT_CANDIDATES = ("microsoftyahei", "simhei", "notosanscjksc", "notosanscjk", "simsun")
+
+
 class FontManager:
     """统一字体加载与管理（延迟初始化，需在 pygame.init() 后调用 ensure_init()）"""
     _instance = None
@@ -46,22 +61,40 @@ class FontManager:
         self._initialized = True
 
     def _init(self):
-        import os
-        font_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        # 项目内主字体：用户指定的手写体
-        font_path = os.path.join(font_dir, 'BaoCanMouHuiTingShouXieTi2.0-2.ttf')
-
         sizes = {'small': 16, 'medium': 20, 'large': 28, 'xlarge': 36, 'title': 52}
         self.fonts = {}
+        self.font_source = ""
 
-        if os.path.exists(font_path):
+        for path in FONT_SEARCH_PATHS:
+            if not os.path.exists(path):
+                continue
             try:
                 for name, size in sizes.items():
-                    self.fonts[name] = pygame.font.Font(font_path, size)
+                    self.fonts[name] = pygame.font.Font(path, size)
+                self.font_source = path
                 return
-            except Exception:
-                pass
-        self._load_sysfonts(sizes)
+            except Exception as exc:  # noqa: BLE001 - 字体坏了也要能进游戏
+                print("[TavernRogue] 内置字体加载失败（%s）：%s" % (path, exc), file=sys.stderr)
+
+        # 回退 1：系统 CJK 字体
+        available = set(pygame.font.get_fonts())
+        for candidate in SYSTEM_FONT_CANDIDATES:
+            if candidate in available:
+                for name, size in sizes.items():
+                    self.fonts[name] = pygame.font.SysFont(candidate, size)
+                self.font_source = "sysfont:%s" % candidate
+                print("[TavernRogue] 未找到内置手写体，回退系统字体 %s"
+                      "（跑 `python tools/fetch_font.py` 可下载内置字体）" % candidate,
+                      file=sys.stderr)
+                return
+
+        # 回退 2：pygame 默认字体（没有中文字形，必须出声）
+        for name, size in sizes.items():
+            self.fonts[name] = pygame.font.Font(None, size)
+        self.font_source = "pygame-default"
+        print("[TavernRogue] 警告：没有可用的中文字体，界面中文可能显示为方块 —— "
+              "跑 `python tools/fetch_font.py` 下载，或手工把 %s 放到 assets/fonts/"
+              % FONT_FILENAME, file=sys.stderr)
 
     def _load_sysfonts(self, sizes):
         for name, size in sizes.items():
