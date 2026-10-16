@@ -154,9 +154,9 @@ class Cleric(Hero):
 class Wizard(Hero):
     """法师 - 魔法飞弹
 
-    被动：法力 +5 → 飞弹总伤害由 3 提升到 5（法师通关率 33%，全职业最低）
+    被动：法力 +5 → 飞弹总伤害由 3 提升到 4（法师通关率 33%，全职业最低）
     """
-    MISSILE_DAMAGE = 5
+    MISSILE_DAMAGE = 4
 
     def __init__(self):
         super().__init__("法师", "wizard")

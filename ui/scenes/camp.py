@@ -105,7 +105,9 @@ class CampScene(Scene):
         self._leave()
 
     def _rest(self, amount):
-        healed = self.gm.heal_hero(amount)
+        # 进阶 4 起营地治疗打折（"铁石心肠"）
+        mult = float(getattr(self.gm, 'camp_heal_mult', 1.0) or 1.0)
+        healed = self.gm.heal_hero(max(1, int(round(amount * mult))))
         print(f"[TavernRogue] 在营地恢复了 {healed} 点生命值")
         self._leave()
 

@@ -300,5 +300,38 @@
       "tribe": "dragonborn",
       "value": 2
     }
+  },
+  {
+    "id": "mirror_of_roles",
+    "name": "职介棱镜",
+    "rarity": "epic",
+    "description": "计算种族共鸣时，你场上数量最多的种族额外 +1 计数。",
+    "effect": {
+      "type": "duplicate_tribe_resonance",
+      "value": 1
+    }
+  },
+  {
+    "id": "pact_of_ruin",
+    "name": "毁灭契约",
+    "rarity": "epic",
+    "description": "所有友军获得连击，但最大生命值降低 20%。",
+    "effect": {
+      "type": "keyword_for_stat_penalty",
+      "grant": "FRENZY",
+      "penalty_stat": "health",
+      "penalty_pct": 0.2
+    }
+  },
+  {
+    "id": "hourglass_of_patience",
+    "name": "耐心沙漏",
+    "rarity": "epic",
+    "description": "每经过一个战斗回合，所有友军攻击力 +1（每场最多 +5）。",
+    "effect": {
+      "type": "escalating_attack",
+      "value": 1,
+      "cap": 5
+    }
   }
 ]

@@ -109,6 +109,7 @@ class GameManager:
         }
         self.hero = create_hero(hero_class)
         self.difficulty_params = self.progress.get_difficulty_params(hero_class)
+        self._start_gold_penalty = int(self.difficulty_params.get('start_gold_penalty', 0) or 0)
         # 进阶提供英雄额外生命值
         bonus_hp = self.difficulty_params.get('hero_bonus_hp', 0)
         self.hero.max_health += bonus_hp
@@ -134,9 +135,13 @@ class GameManager:
         self.battle_engine = BattleEngine(log_callback=print, data_loader=data_loader)
         self.recruit_system = RecruitSystem(self.hero, data_loader)
         self.map_manager = MapManager(data_loader)
-        # 进阶≥3 起，精英/Boss 多带一条词缀（内容复用：同敌人 × 不同词缀 = 新遭遇）
-        advancement = self.progress.get_class_advancement(self._run_class_id or '')
-        self.map_manager.affix_bonus = 1 if advancement >= 3 else 0
+        # 进阶难度：供给侧（精英权重/词缀数）与经济面（商店/掉落/营地/起始铸币）
+        params = self.difficulty_params or {}
+        self.map_manager.affix_bonus = int(params.get('affix_bonus', 0) or 0)
+        self.map_manager.elite_node_weight = float(params.get('elite_node_weight', 1.0) or 1.0)
+        self.shop_price_mult = float(params.get('shop_price_mult', 1.0) or 1.0)
+        self.gold_mult = float(params.get('boss_gold_mult', 1.0) or 1.0)
+        self.camp_heal_mult = float(params.get('camp_heal_mult', 1.0) or 1.0)
         self.event_system = EventSystem(data_loader, ai_generator=ai_generator)
         self.relic_system = RelicSystem(data_loader)
         self.reward_system = RewardSystem(data_loader, self.relic_system)
@@ -144,12 +149,15 @@ class GameManager:
             data_loader, self.battle_engine,
             self.event_system, self.relic_system
         )
+        self.node_handler.gold_mult = self.gold_mult
 
     # ─── 铸币经济 ──────────────────────────────────
 
     def award_turn_gold(self) -> int:
-        """发放回合铸币: 3 + 层数 + 人类共鸣加成，上限 10"""
-        turn_gold = 3 + self.floor + self.tribe_gold_bonus()
+        """发放回合铸币: 3 + 层数 + 人类共鸣加成 − 起始铸币惩罚，上限 10"""
+        penalty = int(getattr(self, '_start_gold_penalty', 0) or 0)
+        self._start_gold_penalty = 0  # 起始惩罚只在第一回合生效
+        turn_gold = max(0, 3 + self.floor + self.tribe_gold_bonus() - penalty)
         old = self.gold
         self.gold = min(self.gold + turn_gold, self.MAX_GOLD)
         return self.gold - old
@@ -194,9 +202,10 @@ class GameManager:
         return self.health
 
     def shop_price(self, base_cost: int) -> int:
-        """商店价格（宝物「商人祝福」打折，最低 1 金）。"""
+        """商店价格（进阶涨价 × 宝物「商人祝福」打折，最低 1 金）。"""
         discount = self.relic_system.get_shop_discount() if self.relic_system else 0
-        return max(1, int(base_cost) - discount)
+        mult = float(getattr(self, 'shop_price_mult', 1.0) or 1.0)
+        return max(1, int(round(int(base_cost) * mult)) - discount)
 
     # ─── 局内存档（跑团现场，走自研引擎 SaveLoadManager）────
 

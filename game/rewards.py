@@ -77,20 +77,10 @@ class RewardSystem:
         return rewards
     
     def _random_relic(self, rarity=None):
-        """随机选择一个宝物"""
-        if not self.relics_data:
-            return None
-        
-        # 过滤稀有度
-        if rarity:
-            available = [r for r in self.relics_data if r['rarity'] == rarity]
-        else:
-            available = self.relics_data
-        
-        if not available:
-            return None
-        
-        return random.choice(available).copy()
+        """随机选择一个宝物（按稀有度权重；见 game/relic_effects.pick_relic）"""
+        from game.relic_effects import pick_relic
+
+        return pick_relic(self.relics_data, rarity=rarity)
     
     def _random_adventurer(self, tier=None):
         """随机选择一个冒险者"""

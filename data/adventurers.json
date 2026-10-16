@@ -60,7 +60,9 @@
     "tier": 1,
     "attack": 3,
     "health": 1,
-    "keywords": [],
+    "keywords": [
+      "THORNS"
+    ],
     "script": {},
     "cost": 3,
     "initiative": 8,
@@ -91,7 +93,9 @@
     "tier": 2,
     "attack": 2,
     "health": 3,
-    "keywords": [],
+    "keywords": [
+      "INTIMIDATE"
+    ],
     "script": {},
     "cost": 4,
     "initiative": 10,
@@ -121,7 +125,8 @@
     "health": 4,
     "keywords": [
       "GUARD",
-      "ARMOR"
+      "ARMOR",
+      "THORNS"
     ],
     "script": {},
     "cost": 4,
@@ -188,7 +193,9 @@
     "health": 4,
     "max_health": 4,
     "initiative": 12,
-    "keywords": [],
+    "keywords": [
+      "MARTYR"
+    ],
     "script": {
       "turn_start": {
         "type": "heal_lowest",
@@ -205,7 +212,8 @@
     "attack": 3,
     "health": 5,
     "keywords": [
-      "GUARD"
+      "GUARD",
+      "INTIMIDATE"
     ],
     "script": {},
     "cost": 5,
@@ -222,7 +230,8 @@
     "max_health": 5,
     "initiative": 9,
     "keywords": [
-      "ARMOR"
+      "ARMOR",
+      "MARTYR"
     ],
     "script": {
       "turn_start": {
@@ -258,7 +267,8 @@
     "keywords": [
       "GUARD",
       "ARMOR",
-      "SHIELD"
+      "SHIELD",
+      "AEGIS"
     ],
     "script": {},
     "cost": 5,
@@ -293,7 +303,9 @@
     "tier": 3,
     "attack": 5,
     "health": 3,
-    "keywords": [],
+    "keywords": [
+      "INTIMIDATE"
+    ],
     "script": {
       "deathrattle": {
         "type": "damage_all",
@@ -333,7 +345,8 @@
     "health": 6,
     "keywords": [
       "GUARD",
-      "SHIELD"
+      "SHIELD",
+      "AEGIS"
     ],
     "script": {
       "battle_cry": {
@@ -359,7 +372,8 @@
     "health": 3,
     "keywords": [
       "DODGE",
-      "FRENZY"
+      "FRENZY",
+      "AURA"
     ],
     "script": {},
     "cost": 6,
@@ -432,7 +446,8 @@
     "attack": 5,
     "health": 4,
     "keywords": [
-      "POISON"
+      "POISON",
+      "MARTYR"
     ],
     "script": {
       "deathrattle": {
@@ -476,7 +491,8 @@
     "keywords": [
       "DODGE",
       "POISON",
-      "FRENZY"
+      "FRENZY",
+      "WARRIOR_SPIRIT"
     ],
     "script": {},
     "cost": 7,
@@ -493,7 +509,8 @@
     "keywords": [
       "GUARD",
       "ARMOR",
-      "SHIELD"
+      "SHIELD",
+      "AURA"
     ],
     "script": {
       "battle_cry": {
@@ -512,7 +529,9 @@
     "tier": 5,
     "attack": 6,
     "health": 5,
-    "keywords": [],
+    "keywords": [
+      "AURA"
+    ],
     "script": {
       "battle_cry": {
         "type": "damage_all",
@@ -532,7 +551,8 @@
     "health": 4,
     "keywords": [
       "FRENZY",
-      "OVERKILL"
+      "OVERKILL",
+      "WARRIOR_SPIRIT"
     ],
     "script": {
       "deathrattle": {
@@ -602,7 +622,8 @@
       "DODGE",
       "POISON",
       "FRENZY",
-      "REGENERATION"
+      "REGENERATION",
+      "AEGIS"
     ],
     "script": {
       "battle_cry": {
@@ -645,7 +666,8 @@
     "health": 7,
     "keywords": [
       "FRENZY",
-      "FIRE_BREATH"
+      "FIRE_BREATH",
+      "AEGIS"
     ],
     "script": {
       "battle_cry": {
@@ -667,7 +689,8 @@
     "keywords": [
       "FRENZY",
       "POISON",
-      "OVERKILL"
+      "OVERKILL",
+      "WARRIOR_SPIRIT"
     ],
     "script": {
       "deathrattle": {
@@ -794,7 +817,8 @@
     "attack": 4,
     "health": 2,
     "keywords": [
-      "FRENZY"
+      "FRENZY",
+      "WARRIOR_SPIRIT"
     ],
     "tribe": "half_orc",
     "script": {},
@@ -854,7 +878,8 @@
     "health": 7,
     "keywords": [
       "ARMOR",
-      "GUARD"
+      "GUARD",
+      "THORNS"
     ],
     "tribe": "dwarf",
     "script": {},
@@ -887,7 +912,8 @@
     "attack": 4,
     "health": 6,
     "keywords": [
-      "GUARD"
+      "GUARD",
+      "AURA"
     ],
     "tribe": "human",
     "script": {
@@ -938,7 +964,9 @@
     "tier": 4,
     "attack": 3,
     "health": 5,
-    "keywords": [],
+    "keywords": [
+      "INTIMIDATE"
+    ],
     "tribe": "tiefling",
     "script": {
       "battle_start": {
@@ -1265,7 +1293,9 @@
     "tier": 1,
     "attack": 1,
     "health": 2,
-    "keywords": [],
+    "keywords": [
+      "MARTYR"
+    ],
     "script": {
       "deathrattle": {
         "type": "damage_random",
@@ -1285,7 +1315,8 @@
     "health": 4,
     "keywords": [
       "BLOOD_FURY",
-      "OVERKILL"
+      "OVERKILL",
+      "THORNS"
     ],
     "script": {},
     "cost": 5,

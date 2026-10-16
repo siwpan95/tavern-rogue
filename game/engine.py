@@ -123,6 +123,33 @@ class BattleEngine:
                         'side': 'enemy'
                     })
         
+        # 神盾（AEGIS）：开战时获得吸收值 = min(3, 20% 最大生命)；先吃吸收，不溢出到生命
+        for unit in allies + enemies:
+            if 'AEGIS' in unit.get('keywords', []):
+                max_hp = unit.get('max_health', unit.get('health', 1))
+                value = min(3, -(-max_hp // 5))
+                unit['_aegis'] = max(int(unit.get('_aegis', 0) or 0), value)
+                self._log(f"{unit['name']} 的神盾获得 {unit['_aegis']} 点吸收值")
+
+        # 光环（AURA）：相邻（pos±1）同伴 +1 攻击 +1 生命上限
+        for side_units in (allies, enemies):
+            for unit in side_units:
+                if 'AURA' not in unit.get('keywords', []):
+                    continue
+                own_pos = unit.get('pos', 0)
+                buffed = 0
+                for neighbor in side_units:
+                    if neighbor is unit or abs(neighbor.get('pos', -99) - own_pos) != 1:
+                        continue
+                    if neighbor.get('health', 0) <= 0:
+                        continue
+                    neighbor['attack'] = neighbor.get('attack', 0) + 1
+                    neighbor['max_health'] = neighbor.get('max_health', neighbor.get('health', 1)) + 1
+                    neighbor['health'] = neighbor.get('health', 1) + 1
+                    buffed += 1
+                if buffed:
+                    self._log(f"{unit['name']} 的光环强化了 {buffed} 名相邻同伴")
+
         # 触发火焰吐息（FIRE_BREATH）
         for unit in allies + enemies:
             if 'FIRE_BREATH' in unit.get('keywords', []):
@@ -252,8 +279,12 @@ class BattleEngine:
             self._log(f"{defender['name']} 闪避了 {attacker['name']} 的攻击！")
             return
         
+        # 威吓（INTIMIDATE）：被威吓过的攻击者攻击力下降（独立字段，不改写 attack 以免污染血怒/宝物加成）
+        intimidate = int(attacker.get('_intimidate_debuff', 0) or 0)
+        effective_attack = max(1, attacker.get('attack', 0) - intimidate)
+
         # 计算伤害
-        damage = self._calculate_damage(attacker['attack'], defender)
+        damage = self._calculate_damage(effective_attack, defender)
 
         # 宝物：每场战斗一次的下一次攻击双倍（狂战士药剂）
         mods = getattr(self, '_relic_mods', {}) or {}
@@ -281,9 +312,33 @@ class BattleEngine:
                 if reduced:
                     self._log(f"{defender['name']} 的矮人共鸣减免了 {reduced} 点伤害")
 
+        # 神盾（AEGIS）：先吃吸收值
+        aegis = int(defender.get('_aegis', 0) or 0)
+        if aegis > 0 and damage > 0:
+            absorbed = min(aegis, damage)
+            defender['_aegis'] = aegis - absorbed
+            damage -= absorbed
+            self._log(f"{defender['name']} 的神盾吸收了 {absorbed} 点伤害"
+                      f"（剩余 {defender['_aegis']}）")
+
         # 应用伤害
         defender['health'] -= damage
+        dealt = max(0, damage)
         self._log(f"{attacker['name']} 对 {defender['name']} 造成 {damage} 点伤害 (剩余HP: {defender['health']})")
+
+        # 荆棘（THORNS）：反弹实际承受伤害的 50%，每个攻击事件最多一次
+        if 'THORNS' in defender.get('keywords', []) and dealt > 0:
+            reflect = max(1, dealt // 2)
+            attacker['health'] = attacker.get('health', 0) - reflect
+            self._log(f"{defender['name']} 的荆棘反弹 {reflect} 点伤害给 {attacker['name']}"
+                      f" (剩余HP: {attacker['health']})")
+            if attacker.get('health', 0) <= 0:
+                self.add_event({
+                    'type': 'death',
+                    'unit': attacker,
+                    'side': attacker.get('_side', 'enemy'),
+                    'killer': defender
+                })
 
         # 检查横扫（SWEEP 与 CLEAVE 是同一件事：引擎历史实现叫 SWEEP，数据/设计稿用 CLEAVE）
         if {'SWEEP', 'CLEAVE'} & set(attacker.get('keywords', [])):
@@ -325,6 +380,25 @@ class BattleEngine:
                 'side': event.get('defender_side', 'enemy'),
                 'killer': attacker
             })
+
+        # 战魂（WARRIOR_SPIRIT）：每 2 次击杀 +1 攻击，每场战斗最多 +4
+        if defender.get('health', 0) <= 0 and 'WARRIOR_SPIRIT' in attacker.get('keywords', []):
+            kills = int(attacker.get('_ws_kills', 0) or 0) + 1
+            attacker['_ws_kills'] = kills
+            bonus = int(attacker.get('_ws_bonus', 0) or 0)
+            if kills % 2 == 0 and bonus < 4:
+                attacker['attack'] = attacker.get('attack', 0) + 1
+                attacker['_ws_bonus'] = bonus + 1
+                self._log(f"{attacker['name']} 的战魂累积 {kills} 杀，攻击力 +1"
+                          f"（本场 +{attacker['_ws_bonus']}）")
+
+        # 威吓（INTIMIDATE）：被打中但没死的攻击者会越来越虚弱（最多 3 层）
+        if defender.get('health', 0) > 0 and 'INTIMIDATE' in defender.get('keywords', []):
+            current = int(attacker.get('_intimidate_debuff', 0) or 0)
+            if current < 3:
+                attacker['_intimidate_debuff'] = current + 1
+                self._log(f"{defender['name']} 的威吓让 {attacker['name']} 攻击力 -1"
+                          f"（{attacker['_intimidate_debuff']}/3）")
 
         # 检查过杀（OVERKILL）— 超额伤害溅射到随机敌人
         if 'OVERKILL' in attacker.get('keywords', []) and defender['health'] < 0:
@@ -459,6 +533,46 @@ class BattleEngine:
                           if stat in ('attack', 'health')
                           else f"宝物加成：{hit} 名 {tribe} 冒险者获得 {stat}")
 
+        # 毁灭契约一类的"给关键词、拿生命换"的宝物
+        for grant in mods.get('keyword_grants', []) or []:
+            keyword = grant.get('grant')
+            penalty_pct = float(grant.get('penalty_pct', 0) or 0)
+            hit = 0
+            for ally in allies:
+                if ally.get('health', 0) <= 0:
+                    continue
+                keywords = ally.setdefault('keywords', [])
+                if keyword and keyword not in keywords:
+                    keywords.append(keyword)
+                if penalty_pct > 0 and grant.get('penalty_stat', 'health') == 'health':
+                    max_hp = ally.get('max_health', ally.get('health', 1))
+                    penalty = int(round(max_hp * penalty_pct))
+                    ally['max_health'] = max(1, max_hp - penalty)
+                    ally['health'] = max(1, min(ally.get('health', 1), ally['max_health']))
+                hit += 1
+            if hit:
+                self._log(f"宝物代价：{hit} 名友军获得 {keyword}，最大生命 -{penalty_pct:.0%}")
+
+    def _apply_escalating_attack(self, allies):
+        """宝物：每回合全队攻击递增（耐心沙漏），有上限。"""
+        mods = getattr(self, '_relic_mods', {}) or {}
+        step = int(mods.get('escalating_attack', 0) or 0)
+        if step <= 0:
+            return
+        cap = int(mods.get('escalating_cap', 5) or 5)
+        gained_any = False
+        for ally in allies:
+            if ally.get('health', 0) <= 0:
+                continue
+            gained = int(ally.get('_escalation', 0) or 0)
+            if gained >= cap:
+                continue
+            ally['attack'] = ally.get('attack', 0) + step
+            ally['_escalation'] = gained + step
+            gained_any = True
+        if gained_any:
+            self._log(f"耐心沙漏：全队攻击 +{step}（上限 +{cap}）")
+
     def _apply_hero_passives(self, allies, hero):
         """英雄被动里能落到战斗上的部分。
 
@@ -508,6 +622,18 @@ class BattleEngine:
             return
         
         self._log(f"{unit['name']} 阵亡！")
+
+        # 殉道（MARTYR）：把护盾留给活着的同伴（在亡语与血怒之前）
+        if 'MARTYR' in unit.get('keywords', []):
+            same_side = (getattr(self, '_last_battle_state', None) or {}).get(
+                'allies' if side == 'ally' else 'enemies', [])
+            alive = [member for member in same_side
+                     if member is not unit and member.get('health', 0) > 0]
+            for target in random.sample(alive, min(2, len(alive))):
+                keywords = target.setdefault('keywords', [])
+                if 'SHIELD' not in keywords:
+                    keywords.append('SHIELD')
+                    self._log(f"{unit['name']} 的殉道让 {target['name']} 获得力场护盾")
         
         # 触发亡者遗赠（亡语）
         script = unit.get('script', {})
@@ -853,6 +979,7 @@ class BattleEngine:
             
             battle_state['turn'] += 1
             self._apply_heal_per_turn(hero)
+            self._apply_escalating_attack(allies)
         
         # 判断胜负
         allies_alive = any(a['health'] > 0 for a in allies)
@@ -978,8 +1105,11 @@ class BattleEngine:
     # 种族共鸣
     # ============================================================
     
-    def apply_tribe_effects(self, units, tribe, enemies=None):
-        """应用种族共鸣效果 — 统计种族数量并存储共鸣等级，供战斗中触发"""
+    def apply_tribe_effects(self, units, tribe, enemies=None, relic_mods=None):
+        """应用种族共鸣效果 — 统计种族数量并存储共鸣等级，供战斗中触发
+
+        relic_mods: 宝物「职介棱镜」等会改写共鸣计数（见 game/relic_effects.py）
+        """
         self._tribe_resonance.clear()
 
         tribe_counts = {}
@@ -987,6 +1117,13 @@ class BattleEngine:
             unit_tribe = unit.get('tribe')
             if unit_tribe:
                 tribe_counts[unit_tribe] = tribe_counts.get(unit_tribe, 0) + 1
+
+        # 职介棱镜：最多种族额外 +1 计数（5 个同族也能吃满 6 档共鸣）
+        bonus = int((relic_mods or {}).get('duplicate_tribe_resonance', 0) or 0)
+        if bonus > 0 and tribe_counts:
+            top_tribe = max(tribe_counts, key=lambda key: tribe_counts[key])
+            tribe_counts[top_tribe] += bonus
+            self._log(f"职介棱镜：{top_tribe} 的共鸣计数 +{bonus}")
 
         # 检查每个种族的共鸣（2/4/6 个 → 等级 1/2/3）
         for t, count in tribe_counts.items():

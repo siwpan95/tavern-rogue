@@ -354,25 +354,13 @@ class RelicManager:
     
     def discover_relic(self, rarity=None):
         """
-        发现一个随机宝物
-        rarity: 稀有度过滤（None表示所有）
+        发现一个随机宝物（按稀有度权重：common 60% / rare 30% / epic 10%）
+        rarity: 稀有度过滤（None表示按权重抽）
         返回: 宝物数据
         """
-        reics_data = self.relic_system.relics_data
-        
-        if not reics_data:
-            return None
-        
-        # 过滤稀有度
-        if rarity:
-            available = [r for r in reics_data if r['rarity'] == rarity]
-        else:
-            available = reics_data
-        
-        if not available:
-            return None
-        
-        return random.choice(available).copy()
+        from game.relic_effects import pick_relic
+
+        return pick_relic(self.relic_system.relics_data, rarity=rarity)
     
     def award_relic(self, relic=None, rarity=None):
         """

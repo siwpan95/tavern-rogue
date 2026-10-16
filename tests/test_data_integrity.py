@@ -7,6 +7,8 @@ import pytest
 KNOWN_KEYWORDS = {
     "GUARD", "SHIELD", "ARMOR", "POISON", "FRENZY", "DODGE", "FLYING",
     "REGENERATION", "FIRE_BREATH", "BLOOD_FURY", "CLEAVE", "OVERKILL",
+    # 2026-10-16 新增（全部挂在既有 7 种事件类型上，不引入新结算阶段）
+    "AEGIS", "THORNS", "INTIMIDATE", "AURA", "WARRIOR_SPIRIT", "MARTYR",
 }
 KNOWN_TRIBES = {"human", "elf", "dwarf", "dragonborn", "half_orc", "tiefling"}
 KNOWN_SCRIPT_TYPES = {

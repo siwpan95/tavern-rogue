@@ -10,11 +10,16 @@ def make_node(layer, node_type, index=0):
             "revealed": True, "completed": False, "content": None}
 
 
-def test_final_boss_layer_declares_its_boss(data_loader):
+def test_final_boss_layer_declares_its_boss_pool(data_loader):
+    """最终 Boss 层必须是「池化」的（内容复用），且包含 README 里的经典红龙。"""
     manager = MapManager(data_loader)
     final_layers = [layer for layer in manager.map_templates["layers"] if layer["type"] == "boss"]
     assert final_layers, "地图模板必须有一层固定 Boss 层"
-    assert final_layers[0].get("boss"), "最终 Boss 层必须配 boss id（README：远古红龙）"
+    pool = final_layers[0].get("boss_pool") or []
+    assert len(pool) >= 2, "Boss 池至少 2 个（固定单 Boss 每局都一样）"
+    assert "ancient_red_dragon" in pool, "经典红龙应保留在池中"
+    for boss_id in pool:
+        assert manager._load_enemy(boss_id), "池里的 Boss 必须在 enemies.json 里存在：%s" % boss_id
 
 
 def test_random_boss_node_without_config_uses_boss_pool(data_loader):
@@ -27,11 +32,26 @@ def test_random_boss_node_without_config_uses_boss_pool(data_loader):
     assert enemies[0].get("is_boss") is True, "没配 boss id 时也必须从 is_boss 池里取"
 
 
-def test_configured_boss_is_used(data_loader):
+def test_layer_boss_pools_are_used(data_loader):
+    """第 7 层与第 8 层的 Boss 都应来自各自的池。"""
     manager = MapManager(data_loader)
     manager.map_data = manager.generate_map()
-    content = manager._generate_node_content(make_node(8, "boss"))
-    assert content["enemies"][0]["id"] == "ancient_red_dragon"
+    layer7 = manager.map_templates["layers"][6].get("boss_pool")
+    layer8 = manager.map_templates["layers"][7].get("boss_pool")
+    for _ in range(10):
+        assert manager._generate_node_content(make_node(7, "boss"))["enemies"][0]["id"] in layer7
+        assert manager._generate_node_content(make_node(8, "boss"))["enemies"][0]["id"] in layer8
+
+
+def test_bosses_have_counter_tags_and_budget(data_loader):
+    """每个 Boss 必须标 `counter_tag`（它要求玩家改变什么），且数值预算不通胀。"""
+    manager = MapManager(data_loader)
+    tagged = [e for e in data_loader("enemies.json") if e.get("counter_tag")]
+    assert len(tagged) >= 6, "至少 6 个 Boss 带 counter_tag"
+    for boss in tagged:
+        assert boss.get("is_boss") is True
+        total = boss["attack"] + boss["health"]
+        assert 18 <= total <= 26, "%s 的 atk+hp=%d 超出 18-26 预算" % (boss["id"], total)
 
 
 def test_load_enemy_is_loud_instead_of_silent(data_loader):
@@ -103,20 +123,20 @@ def test_boss_takes_two_affixes_and_advancement_adds_one(data_loader):
     manager.map_data = manager.generate_map()
     content = manager._generate_node_content(make_node(8, "boss"))
     assert len(content["affixes"]) == 2
-    assert content["enemies"][0]["id"] == "ancient_red_dragon"
 
-    manager.affix_bonus = 1  # 进阶≥3
+    manager.affix_bonus = 1  # 进阶 5：额外一条词缀
     boosted = manager._generate_node_content(make_node(8, "boss"))
     assert len(boosted["affixes"]) == 3
 
 
 def test_affix_boosts_stats(data_loader):
+    """词缀必须真的改数值（用同一个敌人对比，避免随机敌人造成的假比较）。"""
     manager = MapManager(data_loader)
-    manager.map_data = manager.generate_map()
-    base = manager._generate_node_content(make_node(7, "elite"))["enemies"][0]
     manager.map_templates = dict(manager.map_templates)
     manager.map_templates["affixes"] = [
         {"id": "giant", "name": "巨型", "keywords": [], "health_mult": 2.0, "attack_mult": 1.0}]
-    boosted = manager._generate_node_content(make_node(7, "elite"))["enemies"][0]
-    assert boosted["health"] > base["health"]
-    assert "巨型" in boosted["name"]
+    enemy = {"name": "靶子", "health": 10, "max_health": 10, "attack": 4, "keywords": []}
+    applied = manager._apply_affixes([enemy], layer=7)
+    assert applied == ["giant"]
+    assert enemy["health"] == 20 and enemy["max_health"] == 20
+    assert "巨型" in enemy["name"]

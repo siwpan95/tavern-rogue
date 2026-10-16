@@ -22,14 +22,34 @@ STARTING_CLASSES = {'warrior'}
 # 进阶等级上限
 MAX_ADVANCEMENT = 5
 
-# 进阶难度调整（用于下一局开始时的敌人强度）
+# 进阶难度调整（2026-10-16 重做：1-3 级是数值层，4-5 级是"改变决策质量"层）
+# 设计依据（调研）：Hades 的定价哲学 —— 改变决策质量的惩罚最贵、纯数值最便宜；
+# Slay the Spire 的 A1（精英 +60%）属于供给侧改动，放在第 1 级。
 ADVANCEMENT_DIFFICULTY = {
-    0: {'enemy_health_mult': 1.0, 'enemy_attack_mult': 1.0, 'enemy_count_mult': 1.0, 'hero_bonus_hp': 0},
-    1: {'enemy_health_mult': 1.15, 'enemy_attack_mult': 1.1, 'enemy_count_mult': 1.0, 'hero_bonus_hp': 0},
-    2: {'enemy_health_mult': 1.3, 'enemy_attack_mult': 1.2, 'enemy_count_mult': 1.0, 'hero_bonus_hp': 2},
-    3: {'enemy_health_mult': 1.5, 'enemy_attack_mult': 1.3, 'enemy_count_mult': 1.15, 'hero_bonus_hp': 2},
-    4: {'enemy_health_mult': 1.75, 'enemy_attack_mult': 1.4, 'enemy_count_mult': 1.15, 'hero_bonus_hp': 4},
-    5: {'enemy_health_mult': 2.0, 'enemy_attack_mult': 1.5, 'enemy_count_mult': 1.3, 'hero_bonus_hp': 4}
+    0: {'enemy_health_mult': 1.0, 'enemy_attack_mult': 1.0, 'enemy_count_mult': 1.0,
+        'hero_bonus_hp': 0, 'elite_node_weight': 1.0, 'affix_bonus': 0,
+        'shop_price_mult': 1.0, 'boss_gold_mult': 1.0, 'camp_heal_mult': 1.0,
+        'start_gold_penalty': 0},
+    1: {'enemy_health_mult': 1.0, 'enemy_attack_mult': 1.0, 'enemy_count_mult': 1.0,
+        'hero_bonus_hp': 0, 'elite_node_weight': 1.6, 'affix_bonus': 0,
+        'shop_price_mult': 1.0, 'boss_gold_mult': 1.0, 'camp_heal_mult': 1.0,
+        'start_gold_penalty': 0},
+    2: {'enemy_health_mult': 1.20, 'enemy_attack_mult': 1.10, 'enemy_count_mult': 1.0,
+        'hero_bonus_hp': 0, 'elite_node_weight': 1.6, 'affix_bonus': 0,
+        'shop_price_mult': 1.0, 'boss_gold_mult': 1.0, 'camp_heal_mult': 1.0,
+        'start_gold_penalty': 0},
+    3: {'enemy_health_mult': 1.20, 'enemy_attack_mult': 1.10, 'enemy_count_mult': 1.1,
+        'hero_bonus_hp': 0, 'elite_node_weight': 1.6, 'affix_bonus': 0,
+        'shop_price_mult': 1.30, 'boss_gold_mult': 0.75, 'camp_heal_mult': 1.0,
+        'start_gold_penalty': 0},
+    4: {'enemy_health_mult': 1.35, 'enemy_attack_mult': 1.20, 'enemy_count_mult': 1.1,
+        'hero_bonus_hp': 0, 'elite_node_weight': 1.8, 'affix_bonus': 0,
+        'shop_price_mult': 1.30, 'boss_gold_mult': 0.75, 'camp_heal_mult': 0.6,
+        'start_gold_penalty': 1},
+    5: {'enemy_health_mult': 1.50, 'enemy_attack_mult': 1.30, 'enemy_count_mult': 1.2,
+        'hero_bonus_hp': 0, 'elite_node_weight': 2.0, 'affix_bonus': 1,
+        'shop_price_mult': 1.30, 'boss_gold_mult': 0.75, 'camp_heal_mult': 0.6,
+        'start_gold_penalty': 2},
 }
 
 

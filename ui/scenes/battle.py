@@ -95,7 +95,9 @@ class BattleScene(Scene):
         if not self.gm.battle_engine or not self.allies:
             return
 
-        self.gm.battle_engine.apply_tribe_effects(self.allies, None, enemies=self.enemies)
+        relic_mods = self.gm.relic_system.get_battle_mods() if self.gm.relic_system else {}
+        self.gm.battle_engine.apply_tribe_effects(
+            self.allies, None, enemies=self.enemies, relic_mods=relic_mods)
 
         if self.gm.relic_system and self.enemies:
             # 每场战斗重置「每场一次」类宝物（凤凰之灰）

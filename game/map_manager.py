@@ -32,6 +32,8 @@ class MapManager:
         self.map_data = None
         self.current_node = None
         self.path = []  # 玩家选择的路径
+        self.affix_bonus = 0            # 进阶难度带来的额外词缀数
+        self.elite_node_weight = 1.0    # 进阶 1 起精英节点权重上调
         
         # 加载地图模板
         self.map_templates = self.data_loader('map_templates.json')
@@ -79,8 +81,11 @@ class MapManager:
             else:
                 possible_types = layer_info.get('possible_types', ['monster', 'event'])
             layer['possible_types'] = list(possible_types)
+            # 进阶 1 起精英权重上调（抄 StS A1 的「精英 +60%」）
+            weights = [self.elite_node_weight if node_type == 'elite' else 1.0
+                       for node_type in possible_types]
             for i in range(node_count):
-                node_type = random.choice(possible_types)
+                node_type = random.choices(possible_types, weights=weights, k=1)[0]
                 node = self._create_node(node_type, layer_num, i)
                 layer['nodes'].append(node)
         else:
@@ -186,7 +191,9 @@ class MapManager:
             # Boss战斗：优先用模板配置的 boss id；没配就从 is_boss 池里按层数挑一个。
             # 旧版 `_load_enemy(None)` 会兜底成 enemies_data[0] —— 于是第 7 层的随机 boss
             # 静默变成一只 1 级哥布林斥候（平衡对拍时发现）。
-            boss_id = self.map_templates['layers'][node['layer']-1].get('boss')
+            layer_info = self.map_templates['layers'][node['layer']-1]
+            pool = layer_info.get('boss_pool') or []
+            boss_id = layer_info.get('boss') or (random.choice(pool) if pool else None)
             boss = self._load_enemy(boss_id) if boss_id else None
             if boss is None:
                 candidates = [e for e in self.data_loader('enemies.json')

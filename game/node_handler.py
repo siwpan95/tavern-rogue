@@ -29,12 +29,13 @@ class NodeHandler:
         self.event_system = event_system or EventSystem(data_loader, ai_generator=self.ai_generator)
         self.relic_system = relic_system or RelicSystem(data_loader)
         
-        # 游戏状态
+        # 战斗状态
         self.hero = None
         self.hand = []
         self.board = []
         self.relics = []
         self.gold = 0
+        self.gold_mult = 1.0  # 进阶：Boss 掉落铸币倍率
         
     def set_game_state(self, hero, hand, board, relics, gold):
         """设置游戏状态"""
@@ -100,18 +101,22 @@ class NodeHandler:
             return {'type': 'battle', 'result': 'no_enemies'}, logs
         
         logs.append(f"遭遇战斗！敌人: {', '.join([e['name'] for e in enemies])}")
-        
-        # 触发种族共鸣
-        self.battle_engine.apply_tribe_effects(self.board, None, enemies=enemies)
-        
-        # 触发宝物战斗开始效果
+
+        # 宝物修正要先算出来：种族共鸣的计数会被「职介棱镜」改写
         relic_mods = {}
         if self.relic_system:
             self.relic_system.reset_battle_flags()
+            relic_mods = self.relic_system.get_battle_mods()
+
+        # 触发种族共鸣
+        self.battle_engine.apply_tribe_effects(
+            self.board, None, enemies=enemies, relic_mods=relic_mods)
+
+        # 触发宝物战斗开始效果
+        if self.relic_system:
             relic_logs = self.relic_system.apply_battle_start_effects(
                 self.board, enemies, hero=self.hero)
             logs.extend(relic_logs)
-            relic_mods = self.relic_system.get_battle_mods()
         
         # 开始战斗
         # 深拷贝：simulate_battle 会直接改写单位 dict（掉血、加关键词），
@@ -142,7 +147,7 @@ class NodeHandler:
             
             # 应用奖励
             rewards = content.get('rewards', {})
-            reward_result = self._apply_battle_rewards(rewards, logs)
+            reward_result = self._apply_battle_rewards(rewards, logs, node_type)
             
             return {
                 'type': 'battle',
@@ -166,13 +171,14 @@ class NodeHandler:
                 'hero_damage': self.hero.health if self.hero else 0
             }, logs
     
-    def _apply_battle_rewards(self, rewards, logs):
+    def _apply_battle_rewards(self, rewards, logs, node_type=None):
         """应用战斗奖励"""
         result = {}
         
-        # 铸币奖励
+        # 铸币奖励（进阶难度：Boss 掉落打折）
         if rewards.get('gold', False):
-            gold_earned = random.randint(3, 8)
+            mult = float(getattr(self, 'gold_mult', 1.0) or 1.0) if node_type == 'boss' else 1.0
+            gold_earned = max(1, int(round(random.randint(3, 8) * mult)))
             self.gold += gold_earned
             result['gold'] = gold_earned
             logs.append(f"获得 {gold_earned} 枚铸币！")

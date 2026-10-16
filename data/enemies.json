@@ -677,5 +677,143 @@
     "is_boss": true,
     "initiative": 6,
     "max_health": 24
+  },
+  {
+    "id": "goblin_warlord",
+    "name": "哥布林督军",
+    "tier": 6,
+    "attack": 6,
+    "health": 16,
+    "keywords": [
+      "GUARD",
+      "FRENZY"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "summon",
+        "summon_id": "goblin_scout",
+        "count": 3
+      }
+    },
+    "reward_gold": 20,
+    "is_boss": true,
+    "initiative": 9,
+    "max_health": 16,
+    "counter_tag": "aoe"
+  },
+  {
+    "id": "hydra_alpha",
+    "name": "九头蛇首领",
+    "tier": 6,
+    "attack": 7,
+    "health": 17,
+    "keywords": [
+      "REGENERATION",
+      "CLEAVE",
+      "THORNS"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "heal_all",
+        "value": 3
+      }
+    },
+    "reward_gold": 20,
+    "is_boss": true,
+    "initiative": 7,
+    "max_health": 17,
+    "counter_tag": "burst"
+  },
+  {
+    "id": "stone_colossus",
+    "name": "石像巨像",
+    "tier": 6,
+    "attack": 6,
+    "health": 18,
+    "keywords": [
+      "GUARD",
+      "ARMOR",
+      "AEGIS"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "damage_all",
+        "value": 1
+      }
+    },
+    "reward_gold": 20,
+    "is_boss": true,
+    "initiative": 5,
+    "max_health": 18,
+    "counter_tag": "armor_pierce"
+  },
+  {
+    "id": "storm_giant_jarl",
+    "name": "风暴巨人领主",
+    "tier": 6,
+    "attack": 9,
+    "health": 13,
+    "keywords": [
+      "FLYING",
+      "FIRE_BREATH"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "damage_all",
+        "value": 4
+      }
+    },
+    "reward_gold": 20,
+    "is_boss": true,
+    "initiative": 11,
+    "max_health": 13,
+    "counter_tag": "speed"
+  },
+  {
+    "id": "lich_phylactery",
+    "name": "巫妖·命匣",
+    "tier": 6,
+    "attack": 6,
+    "health": 16,
+    "keywords": [
+      "SHIELD",
+      "POISON"
+    ],
+    "script": {
+      "deathrattle": {
+        "type": "summon",
+        "summon_id": "skeleton_mage",
+        "count": 2
+      }
+    },
+    "reward_gold": 20,
+    "is_boss": true,
+    "initiative": 8,
+    "max_health": 16,
+    "counter_tag": "finisher"
+  },
+  {
+    "id": "dracolich_ancient",
+    "name": "远古龙巫妖",
+    "tier": 6,
+    "attack": 7,
+    "health": 19,
+    "keywords": [
+      "FLYING",
+      "FIRE_BREATH",
+      "ARMOR",
+      "AEGIS"
+    ],
+    "script": {
+      "battle_start": {
+        "type": "damage_all",
+        "value": 3
+      }
+    },
+    "reward_gold": 22,
+    "is_boss": true,
+    "initiative": 9,
+    "max_health": 19,
+    "counter_tag": "endgame"
   }
 ]

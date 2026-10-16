@@ -279,7 +279,7 @@ def test_class_passives_are_implemented():
     assert create_hero("warrior").max_health == 33
     assert create_hero("rogue").PASSIVE_INITIATIVE_BONUS == 2
     assert create_hero("cleric").max_health == 33
-    assert create_hero("wizard").MISSILE_DAMAGE == 5
+    assert create_hero("wizard").MISSILE_DAMAGE == 4
     warlock = create_hero("warlock")
     assert warlock.max_health == 28
     assert warlock.PASSIVE_ATTACK_BONUS == 1
@@ -421,3 +421,109 @@ def test_tribe_effects_survive_simulate_battle_reset():
     engine.apply_tribe_effects(dragonborns, None, enemies=enemies)
     engine.simulate_battle(dragonborns, enemies, create_hero("warrior"))
     assert engine._tribe_resonance.get("dragonborn_fire_damage") == 1
+
+
+# ─── 2026-10-16 新增的 6 个关键词 ──────────────────────────
+
+def test_aegis_absorbs_before_health():
+    """神盾：吸收值 = min(3, 20% 最大生命)，先吃吸收、不溢出到生命。"""
+    engine = make_engine()
+    defender = make_unit("神盾兵", 20, 1, ["AEGIS"])
+    attacker = make_unit("攻击者", 10, 5)
+    attach(engine, [attacker], [defender])
+    engine.add_event({"type": "battle_start", "allies": [attacker], "enemies": [defender]})
+    engine.process_events()
+    assert defender["_aegis"] == 3
+
+    attack(engine, attacker, defender)
+    assert defender["health"] == 18, "5 点伤害中 3 点被吸收"
+    assert defender["_aegis"] == 0
+
+
+def test_aegis_caps_at_three_and_does_not_stack_with_shield():
+    engine = make_engine()
+    defender = make_unit("神盾巨人", 40, 1, ["AEGIS", "SHIELD"])
+    engine.add_event({"type": "battle_start", "allies": [], "enemies": [defender]})
+    engine.process_events()
+    assert defender["_aegis"] == 3, "吸收上限 3"
+
+    attacker = make_unit("攻击者", 10, 5)
+    attach(engine, [attacker], [defender])
+    attack(engine, attacker, defender)
+    assert defender["health"] == 40, "力场护盾优先，神盾不该被消费"
+    assert defender["_aegis"] == 3
+
+
+def test_thorns_reflects_half_of_damage_taken():
+    engine = make_engine()
+    defender = make_unit("荆棘卫", 20, 1, ["THORNS"])
+    attacker = make_unit("攻击者", 10, 4)
+    attach(engine, [attacker], [defender])
+    attack(engine, attacker, defender)
+    assert defender["health"] == 16
+    assert attacker["health"] == 8, "反弹 4 // 2 = 2 点"
+
+
+def test_thorns_does_not_recurse():
+    """两个荆棘单位互打不能无限递归。"""
+    engine = make_engine()
+    a = make_unit("荆棘甲", 20, 4, ["THORNS"])
+    b = make_unit("荆棘乙", 20, 4, ["THORNS"])
+    attach(engine, [a], [b])
+    attack(engine, a, b)
+    assert a["health"] == 18 and b["health"] == 16
+
+
+def test_intimidate_weakens_attacker_up_to_three_stacks():
+    engine = make_engine()
+    defender = make_unit("威吓者", 30, 1, ["INTIMIDATE"])
+    attacker = make_unit("攻击者", 30, 5)
+    attach(engine, [attacker], [defender])
+
+    attack(engine, attacker, defender)
+    assert attacker["_intimidate_debuff"] == 1
+
+    attack(engine, attacker, defender)
+    attack(engine, attacker, defender)
+    attack(engine, attacker, defender)
+    assert attacker["_intimidate_debuff"] == 3, "上限 3 层"
+    assert defender["health"] == 30 - 4 - 4 - 3 - 3, "削弱后的伤害递减"
+
+
+def test_aura_buffs_only_adjacent_allies():
+    engine = make_engine()
+    banner = make_unit("旗手", 10, 1, ["AURA"], pos=0)
+    neighbor = make_unit("邻兵", 10, 3, pos=1)
+    far = make_unit("远兵", 10, 3, pos=3)
+    enemy = make_unit("敌人", 10, 1, pos=0)
+    for index, unit_ in enumerate([banner, neighbor, far]):
+        unit_["_side"] = "ally"
+    engine._last_battle_state = {"allies": [banner, neighbor, far], "enemies": [enemy], "hero": None, "turn": 0}
+    engine.add_event({"type": "battle_start", "allies": [banner, neighbor, far], "enemies": [enemy]})
+    engine.process_events()
+    assert (neighbor["attack"], neighbor["max_health"]) == (4, 11)
+    assert (far["attack"], far["max_health"]) == (3, 10), "不相邻不受益"
+
+
+def test_warrior_spirit_grows_every_two_kills():
+    engine = make_engine()
+    killer = make_unit("战魂兵", 30, 9, ["WARRIOR_SPIRIT"])
+    victims = [make_unit("靶%d" % i, 2, 1, pos=i) for i in range(4)]
+    attach(engine, [killer], victims)
+    for victim in victims:
+        attack(engine, killer, victim)
+    assert killer["attack"] == 11, "4 次击杀 = +2 攻击"
+    assert killer["_ws_bonus"] == 2
+
+
+def test_martyr_grants_shields_on_death():
+    engine = make_engine()
+    martyr = make_unit("殉道者", 1, 1, ["MARTYR"])
+    friends = [make_unit("友%d" % i, 5, 2, pos=i) for i in range(3)]
+    enemy = make_unit("敌人", 10, 1)
+    allies = [martyr] + friends
+    attach(engine, allies, [enemy])
+    engine.add_event({"type": "death", "unit": martyr, "side": "ally"})
+    engine.process_events()
+    shielded = [f for f in friends if "SHIELD" in f["keywords"]]
+    assert len(shielded) == 2, "随机 2 名存活友军获得护盾"

@@ -12,7 +12,12 @@
       "name": "地下通道",
       "type": "random",
       "nodes": 3,
-      "possible_types": ["monster", "elite", "event", "camp"],
+      "possible_types": [
+        "monster",
+        "elite",
+        "event",
+        "camp"
+      ],
       "description": "黑暗的通道，充满未知的危险。"
     },
     {
@@ -20,7 +25,12 @@
       "name": "遗忘大厅",
       "type": "random",
       "nodes": 3,
-      "possible_types": ["monster", "elite", "event", "shop"],
+      "possible_types": [
+        "monster",
+        "elite",
+        "event",
+        "shop"
+      ],
       "description": "古老的大厅，回荡着诡异的声音。"
     },
     {
@@ -28,7 +38,12 @@
       "name": "深渊走廊",
       "type": "random",
       "nodes": 3,
-      "possible_types": ["monster", "elite", "event", "camp"],
+      "possible_types": [
+        "monster",
+        "elite",
+        "event",
+        "camp"
+      ],
       "description": "深邃的走廊，似乎没有尽头。"
     },
     {
@@ -36,7 +51,12 @@
       "name": "魔法图书馆",
       "type": "random",
       "nodes": 3,
-      "possible_types": ["monster", "elite", "event", "shop"],
+      "possible_types": [
+        "monster",
+        "elite",
+        "event",
+        "shop"
+      ],
       "description": "堆积着古老典籍的图书馆，魔法能量在此汇聚。"
     },
     {
@@ -44,7 +64,10 @@
       "name": "巨龙前厅",
       "type": "random",
       "nodes": 2,
-      "possible_types": ["elite", "event"],
+      "possible_types": [
+        "elite",
+        "event"
+      ],
       "description": "龙穴的入口，空气中弥漫着硫磺味。"
     },
     {
@@ -52,16 +75,29 @@
       "name": "龙穴深处",
       "type": "random",
       "nodes": 2,
-      "possible_types": ["elite", "boss"],
-      "description": "终于到达了巨龙的巢穴！"
+      "possible_types": [
+        "elite",
+        "boss"
+      ],
+      "description": "终于到达了巨龙的巢穴！",
+      "boss_pool": [
+        "goblin_warlord",
+        "hydra_alpha",
+        "stone_colossus"
+      ]
     },
     {
       "layer": 8,
       "name": "远古龙穴",
       "type": "boss",
       "nodes": 1,
-      "boss": "ancient_red_dragon",
-      "description": "远古红龙的巢穴，最终决战！"
+      "description": "远古红龙的巢穴，最终决战！",
+      "boss_pool": [
+        "ancient_red_dragon",
+        "dracolich_ancient",
+        "lich_phylactery",
+        "storm_giant_jarl"
+      ]
     },
     {
       "layer": 9,
@@ -108,19 +144,159 @@
     }
   },
   "layer_variants": {
-    "2": [["monster", "elite", "event", "camp"], ["monster", "shop", "event"], ["monster", "monster", "camp"]],
-    "3": [["monster", "elite", "event", "shop"], ["monster", "monster", "shop"], ["elite", "event", "camp"]],
-    "4": [["monster", "elite", "event", "camp"], ["monster", "monster", "elite"], ["monster", "shop", "camp"]],
-    "5": [["monster", "elite", "event", "shop"], ["elite", "elite", "event"], ["monster", "monster", "shop"]],
-    "6": [["elite", "event"], ["elite", "elite"], ["elite", "shop"]],
-    "7": [["elite", "boss"], ["elite", "elite"], ["elite", "event"]]
+    "2": [
+      [
+        "monster",
+        "elite",
+        "event",
+        "camp"
+      ],
+      [
+        "monster",
+        "shop",
+        "event"
+      ],
+      [
+        "monster",
+        "monster",
+        "camp"
+      ]
+    ],
+    "3": [
+      [
+        "monster",
+        "elite",
+        "event",
+        "shop"
+      ],
+      [
+        "monster",
+        "monster",
+        "shop"
+      ],
+      [
+        "elite",
+        "event",
+        "camp"
+      ]
+    ],
+    "4": [
+      [
+        "monster",
+        "elite",
+        "event",
+        "camp"
+      ],
+      [
+        "monster",
+        "monster",
+        "elite"
+      ],
+      [
+        "monster",
+        "shop",
+        "camp"
+      ]
+    ],
+    "5": [
+      [
+        "monster",
+        "elite",
+        "event",
+        "shop"
+      ],
+      [
+        "elite",
+        "elite",
+        "event"
+      ],
+      [
+        "monster",
+        "monster",
+        "shop"
+      ]
+    ],
+    "6": [
+      [
+        "elite",
+        "event"
+      ],
+      [
+        "elite",
+        "elite"
+      ],
+      [
+        "elite",
+        "shop"
+      ]
+    ],
+    "7": [
+      [
+        "elite",
+        "boss"
+      ],
+      [
+        "elite",
+        "elite"
+      ],
+      [
+        "elite",
+        "event"
+      ]
+    ]
   },
   "affixes": [
-    {"id": "frenzied", "name": "狂暴", "keywords": ["FRENZY"], "health_mult": 1.0, "attack_mult": 1.1},
-    {"id": "armored", "name": "重甲", "keywords": ["ARMOR"], "health_mult": 1.15, "attack_mult": 1.0},
-    {"id": "venomous", "name": "淬毒", "keywords": ["POISON"], "health_mult": 1.0, "attack_mult": 1.0},
-    {"id": "swift", "name": "疾行", "keywords": ["DODGE"], "health_mult": 1.0, "attack_mult": 1.05},
-    {"id": "giant", "name": "巨型", "keywords": [], "health_mult": 1.4, "attack_mult": 0.9},
-    {"id": "undying", "name": "不灭", "keywords": ["REGENERATION"], "health_mult": 1.2, "attack_mult": 0.95}
+    {
+      "id": "frenzied",
+      "name": "狂暴",
+      "keywords": [
+        "FRENZY"
+      ],
+      "health_mult": 1.0,
+      "attack_mult": 1.1
+    },
+    {
+      "id": "armored",
+      "name": "重甲",
+      "keywords": [
+        "ARMOR"
+      ],
+      "health_mult": 1.15,
+      "attack_mult": 1.0
+    },
+    {
+      "id": "venomous",
+      "name": "淬毒",
+      "keywords": [
+        "POISON"
+      ],
+      "health_mult": 1.0,
+      "attack_mult": 1.0
+    },
+    {
+      "id": "swift",
+      "name": "疾行",
+      "keywords": [
+        "DODGE"
+      ],
+      "health_mult": 1.0,
+      "attack_mult": 1.05
+    },
+    {
+      "id": "giant",
+      "name": "巨型",
+      "keywords": [],
+      "health_mult": 1.4,
+      "attack_mult": 0.9
+    },
+    {
+      "id": "undying",
+      "name": "不灭",
+      "keywords": [
+        "REGENERATION"
+      ],
+      "health_mult": 1.2,
+      "attack_mult": 0.95
+    }
   ]
 }
