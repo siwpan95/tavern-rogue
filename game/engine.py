@@ -2,7 +2,6 @@
 战斗引擎 - 实现基于事件队列的自动战斗系统
 支持守卫、力场护盾、亡者遗赠、连击、闪避、先攻、召唤、牧师技能等关键词
 """
-import json
 import random
 from collections import deque
 
@@ -631,7 +630,6 @@ class BattleEngine:
         """处理单位死亡事件"""
         unit = event.get('unit')
         side = event.get('side', 'unknown')
-        killer = event.get('killer')
         
         # 牧师治疗祷言：友方死亡时复活（保留在战场中）
         if side == 'ally' and self._try_cleric_resurrect(unit):

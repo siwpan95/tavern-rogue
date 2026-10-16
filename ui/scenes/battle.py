@@ -7,7 +7,7 @@ import re
 import pygame
 from ui.scenes.base import Scene
 from ui.renderer import (
-    fill_bg, draw_status_bar, draw_unit_card, fonts, COLORS, WIDTH
+    fill_bg, draw_status_bar, fonts, COLORS, WIDTH
 )
 
 
@@ -633,7 +633,6 @@ class BattleScene(Scene):
         fm = fonts.get('medium')
         fs = fonts.get('small')
 
-        text_color = (*COLORS['text_secondary'], alpha)
         name_surf = fm.render(unit['name'], True, COLORS['text_secondary'])
         name_surf.set_alpha(alpha)
         self.screen.blit(name_surf, (x + 8, y + 8))

@@ -12,7 +12,6 @@ app.py — TavernRogue 图形界面主应用（重构版）
 import os
 import sys
 import pygame
-from pygame.locals import QUIT
 
 # 确保项目根目录在 path 中
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

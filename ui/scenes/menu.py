@@ -3,8 +3,7 @@ menu.py — 主菜单 + 职业选择
 """
 import pygame
 from ui.scenes.base import Scene
-from ui.renderer import fill_bg, draw_text_centered, fonts, COLORS, WIDTH, HEIGHT
-from game.hero import get_all_hero_classes
+from ui.renderer import fill_bg, draw_text_centered, fonts, COLORS
 
 
 class MenuScene(Scene):

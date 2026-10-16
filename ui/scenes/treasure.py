@@ -2,9 +2,8 @@
 treasure.py — 宝藏密室场景
 """
 import random
-import pygame
 from ui.scenes.base import Scene
-from ui.renderer import fill_bg, draw_status_bar, draw_text_centered, fonts, COLORS
+from ui.renderer import fill_bg, draw_status_bar, draw_text_centered, COLORS
 
 
 class TreasureScene(Scene):

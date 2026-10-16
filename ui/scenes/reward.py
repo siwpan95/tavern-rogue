@@ -1,7 +1,6 @@
 """
 reward.py — 战斗奖励场景
 """
-import pygame
 from ui.scenes.base import Scene
 from ui.renderer import fill_bg, draw_status_bar, fonts, COLORS
 

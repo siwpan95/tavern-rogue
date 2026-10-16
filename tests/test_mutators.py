@@ -107,7 +107,6 @@ def test_allstar_grants_starting_gold(make_game):
 
 
 def test_swift_and_lethality_change_battle_start(make_game):
-    from game.engine import BattleEngine
 
     game = make_game(["swift", "lethality"])
     engine = game.battle_engine

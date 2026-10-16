@@ -2,7 +2,6 @@
 事件系统 - 处理随机事件和选择
 支持奇遇节点的文本事件和选项后果
 """
-import json
 import random
 from game.event_effects import EventEffectResolver
 

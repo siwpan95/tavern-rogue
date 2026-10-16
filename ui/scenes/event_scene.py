@@ -1,8 +1,6 @@
 """
 event_scene.py — 随机事件场景
 """
-import random
-import pygame
 from game.event_effects import EventEffectResolver
 from ui.scenes.base import Scene
 from ui.renderer import fill_bg, draw_status_bar, fonts, COLORS, WIDTH

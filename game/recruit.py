@@ -300,17 +300,17 @@ def cli_recruit_interface(hero, data_loader):
     while True:
         status = recruit.get_status()
         
-        print(f"\n--- 当前状态 ---")
+        print("\n--- 当前状态 ---")
         print(f"铸币: {status['gold']}")
         print(f"酒馆等级: {status['tavern_level']}")
         print(f"手牌: {status['hand_count']}/10")
         print(f"场上: {status['board_count']}/7")
         
-        print(f"\n--- 酒馆候选者 ---")
+        print("\n--- 酒馆候选者 ---")
         for i, adv in enumerate(status['tavern_pool']):
             print(f"{i}. {adv['name']} (攻击:{adv['attack']} 生命:{adv['health']}) 花费:{adv.get('cost', 3)}")
         
-        print(f"\n--- 操作 ---")
+        print("\n--- 操作 ---")
         print("1. 招募  2. 刷新  3. 出售  4. 部署  5. 召回  6. 调整站位  7. 结束回合")
         
         choice = input("选择操作: ").strip()

@@ -5,7 +5,7 @@ import pygame
 from ui.scenes.base import Scene
 from ui.renderer import (
     fill_bg, draw_status_bar, draw_text_centered, draw_adventurer_card,
-    fonts, COLORS, WIDTH
+    fonts, COLORS
 )
 
 

@@ -2,7 +2,6 @@
 宝物系统 - 管理魔法物品的被动效果
 支持7种魔法物品，包括触发时机（战斗开始、购买时、亡语等）
 """
-import json
 import random
 from game.relic_effects import build_battle_mods
 

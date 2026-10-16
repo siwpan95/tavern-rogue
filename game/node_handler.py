@@ -3,7 +3,6 @@
 支持怪物战斗、商店、营地、奇遇等节点类型
 """
 import copy
-import json
 import random
 from game.engine import BattleEngine
 from game.event_effects import EventEffectResolver
@@ -499,7 +498,7 @@ def cli_node_handler_test():
     
     # 获取更新后的游戏状态
     game_state = node_handler.get_game_state()
-    print(f"\n更新后的游戏状态:")
+    print("\n更新后的游戏状态:")
     print(f"  英雄生命值: {game_state['hero'].health}")
     print(f"  铸币: {game_state['gold']}")
     print(f"  手牌数量: {len(game_state['hand'])}")

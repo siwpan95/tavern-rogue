@@ -9,7 +9,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from game.hero import create_hero, get_all_hero_classes
+from game.hero import create_hero
 from game import run_save
 from game.engine import BattleEngine
 from game.recruit import RecruitSystem

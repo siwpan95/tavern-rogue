@@ -4,7 +4,6 @@ end_scenes.py — 游戏结束 / 胜利场景
 设计依据（2026-10-16 调研）：失败屏必须让玩家①能归因（为什么输）②没白打（局外进度动了）
 ③知道下一步做什么。旧版只有一行"你坚持到了第 N 层"。
 """
-import pygame
 from ui.scenes.base import Scene
 from ui.renderer import fill_bg, draw_text_centered, fonts, COLORS, WIDTH
 

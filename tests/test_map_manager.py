@@ -45,7 +45,6 @@ def test_layer_boss_pools_are_used(data_loader):
 
 def test_bosses_have_counter_tags_and_budget(data_loader):
     """每个 Boss 必须标 `counter_tag`（它要求玩家改变什么），且数值预算不通胀。"""
-    manager = MapManager(data_loader)
     tagged = [e for e in data_loader("enemies.json") if e.get("counter_tag")]
     assert len(tagged) >= 6, "至少 6 个 Boss 带 counter_tag"
     for boss in tagged:

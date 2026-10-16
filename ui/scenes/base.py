@@ -4,7 +4,6 @@ Scene 基类与 SceneManager — 替代阻塞式 while 循环的场景管理架�
 每个 Scene 实现标准生命周期：
   enter() → [handle_event / update / draw] × N → leave()
 """
-import pygame
 from pygame.locals import QUIT, MOUSEMOTION, MOUSEBUTTONDOWN
 
 

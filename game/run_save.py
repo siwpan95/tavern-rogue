@@ -76,7 +76,6 @@ def snapshot_from(game_manager) -> dict:
 
 def apply_snapshot(game_manager, data: dict) -> bool:
     """把快照写回 GameManager（会重建英雄与地图游标）。"""
-    from game.hero import create_hero
 
     if not data or not data.get("hero_class"):
         return False

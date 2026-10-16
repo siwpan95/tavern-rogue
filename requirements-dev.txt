@@ -1,3 +1,4 @@
-# 开发/验证依赖（跑 tests/ 套件用）
+# 开发/验证依赖（跑 tests/ 套件与 run_tests.py 的静态检查）
 -r requirements.txt
 pytest>=8
+pyflakes>=3        # run_tests.py 的静态检查（死代码/未定义名）；未装会出声 SKIP

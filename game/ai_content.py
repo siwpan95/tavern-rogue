@@ -8,11 +8,9 @@ AI 内容生成 — 为 TavernRogue 提供简单 AI 接入
     if gen.is_available():
         event = gen.enhance_event(original_event)
 """
-import os
 import sys
 import json
 import random
-import re
 
 # 自研 AI 后端（game/ai_backend/，随仓分发）。
 # 这里曾经是无条件 import 且目标目录被 .gitignore 忽略 —— 干净克隆直接

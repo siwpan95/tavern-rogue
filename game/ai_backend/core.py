@@ -9,7 +9,10 @@ import os
 import random
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:  # pragma: no cover - requests 是惰性导入的可选依赖
+    import requests
 
 # ollama 为可选依赖，仅在调用本地模型时才需要
 _ollama = None

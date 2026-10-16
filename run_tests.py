@@ -1,17 +1,31 @@
 """TavernRogue 项目测试入口
 
-三层检查，逐层都能单独跑：
+四层检查，逐层都能单独跑：
   1. 编译仓内**自研** Python 文件（跳过 .venv / third_party / __pycache__ 等）
-  2. 解析 data/*.json
-  3. 若装了 pytest，再跑 tests/ 套件（`--no-pytest` 可关）
+  2. 静态检查：死代码（未使用导入/变量、无占位符 f-string）—— 需要 pyflakes
+  3. 解析 data/*.json
+  4. 若装了 pytest，再跑 tests/ 套件（`--no-pytest` 可关）
 
 用法：
     python run_tests.py
     python run_tests.py --no-pytest
     python run_tests.py --quiet
+    python run_tests.py --no-lint
 
 退出码：0 全部通过 · 1 有失败 · 2 用法错误
 注意：控制台被跳过时**出声**（SKIP 不是通过）。
+
+历史：旧的 `test_final_verification.py` 已删除（它用的是过期 API 与不存在的职业名，
+5 个 FAIL 里 4 个是脚本自己过期）。功能面 × 接任者：
+
+| 旧脚本的功能面 | 接任者 |
+| --- | --- |
+| 语法检查 | 本文件的 `check_python_files`（只扫自研代码）+ `tests/test_entrypoints.py` |
+| JSON 数据可解析 | 本文件的 `check_json_files` + `tests/test_data_integrity.py` |
+| 事件引用敌人 ID 校验 | `tests/test_data_integrity.py::test_event_battle_targets_exist` |
+| 关键词逻辑 / 种族共鸣 / 全流程 | `tests/test_battle_engine.py`、`tests/test_smoke_flow.py` |
+| 宝物效果类型检查 | `tests/test_relic_effects.py`（按实现登记表校验） |
+| 死代码与未定义名 | 本文件的 `run_lint`（pyflakes） |
 """
 from __future__ import annotations
 
@@ -131,7 +145,28 @@ def run_pytest_suite(root: Path):
     return code, False, ""
 
 
-def run_simple_tests(root=None, quiet=True, with_pytest=True) -> int:
+def run_lint(root: Path):
+    """静态检查（pyflakes）：死代码 / 未定义名 / 无占位符 f-string。
+
+    返回 (exit_code, skipped, note)。pyflakes 是开发期依赖，未安装时**出声跳过**，
+    并明确说明"SKIP 不是通过" —— 不许静默当成干净。
+    """
+    try:
+        from pyflakes.api import checkRecursive
+        from pyflakes.reporter import Reporter
+    except ImportError:
+        return 0, True, "未安装 pyflakes（pip install -r requirements-dev.txt）"
+
+    import io
+
+    files = [str(path) for path in iter_python_files(root)]
+    out, err = io.StringIO(), io.StringIO()
+    warnings = checkRecursive(files, Reporter(out, err))
+    report = (out.getvalue() + err.getvalue()).strip()
+    return (1 if warnings else 0), False, report
+
+
+def run_simple_tests(root=None, quiet=True, with_pytest=True, with_lint=True) -> int:
     """给测试与 CI 调用的入口：返回进程退出码。"""
     root = Path(root or PROJECT_ROOT)
     emit("[TavernRogue] 项目测试: %s" % root)
@@ -150,6 +185,19 @@ def run_simple_tests(root=None, quiet=True, with_pytest=True) -> int:
     else:
         emit("[FAIL] 语法或数据检查未通过")
 
+    if with_lint:
+        emit("-- 静态检查（pyflakes） " + "-" * 24)
+        code, skipped, note = run_lint(root)
+        if skipped:
+            emit("[SKIP] 静态检查未运行：%s（SKIP 不是通过）" % note)
+        elif code == 0:
+            emit("[PASS] 静态检查通过（无死代码/未定义名）")
+        else:
+            for line in note.splitlines()[:20]:
+                emit("  " + line)
+            emit("[FAIL] 静态检查发现 %d 条问题" % len(note.splitlines()))
+            failed = True
+
     if with_pytest:
         emit("-- pytest 套件 " + "-" * 34)
         code, skipped, note = run_pytest_suite(root)
@@ -166,10 +214,13 @@ def run_simple_tests(root=None, quiet=True, with_pytest=True) -> int:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="TavernRogue 项目测试入口")
-    parser.add_argument("--no-pytest", action="store_true", help="只跑语法与数据检查")
+    parser.add_argument("--no-pytest", action="store_true", help="只跑语法/静态/数据检查")
+    parser.add_argument("--no-lint", action="store_true", help="跳过 pyflakes 静态检查")
     parser.add_argument("--quiet", action="store_true", help="不逐文件打印")
     args = parser.parse_args(argv)
-    return run_simple_tests(PROJECT_ROOT, quiet=args.quiet, with_pytest=not args.no_pytest)
+    return run_simple_tests(PROJECT_ROOT, quiet=args.quiet,
+                            with_pytest=not args.no_pytest,
+                            with_lint=not args.no_lint)
 
 
 if __name__ == "__main__":
