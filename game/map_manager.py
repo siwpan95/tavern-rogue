@@ -34,6 +34,7 @@ class MapManager:
         self.path = []  # 玩家选择的路径
         self.affix_bonus = 0            # 进阶难度带来的额外词缀数
         self.elite_node_weight = 1.0    # 进阶 1 起精英节点权重上调
+        self.encounter_size_bonus = 0   # 进阶 5 起每次遭遇多 1 个敌人
         
         # 加载地图模板
         self.map_templates = self.data_loader('map_templates.json')
@@ -245,15 +246,28 @@ class MapManager:
         
         return None
     
-    AFFIX_MIN_LAYER = 5  # 第 5 层起精英/Boss 带词缀（前期不给玩家压力）
+    AFFIX_MIN_LAYER = 6  # 第 6 层起精英/Boss 带词缀（第 5 层还是玩家的构筑成型期）
 
     @staticmethod
-    def encounter_size(layer, difficulty='normal'):
-        """遭遇规模随层数增长。
+    def max_enemy_tier(layer, difficulty='normal'):
+        """该层能出现的敌人**星级上限**。
 
-        旧版固定「普通 1-2 个、精英 1 个」，而玩家中后期稳定 7 个单位上场
-        → 7 打 2 必胜，通关率 89%（2026-10-16 平衡对拍）。现在第 9 层普通遭遇 4 个、
-        精英 3 个，和玩家规模同量级。
+        改前是 `tier <= layer`（普通）/`<= layer + 1`（精英）——9 层地图配 6 个星级，
+        于是第 5-6 层就能刷出 6 星怪（攻击 5-9），而玩家场上通常还是 2-4 星，
+        第 7 层因此成了"墙"（62% 的阵亡堆在那里，2026-10-16 对拍实测）。
+        现在改成更缓的曲线：普通 L1-2→2 星、L3-4→3 星、L5-6→4 星、L7-8→5 星、L9→6 星；
+        精英整体 +1 星（精英节点本来就该更难）。
+        """
+        bump = 1 if difficulty == 'elite' else 0
+        return min(6, max(1, 1 + (int(layer or 1) + 1) // 2 + bump))
+
+    @staticmethod
+    def base_encounter_size(layer, difficulty='normal'):
+        """遭遇规模基线（不含进阶/自定义规则的加成）。
+
+        形状：第 1-3 层 2 个（教学期，允许玩家从容成型）→ 4-6 层 3 个 → 7-9 层 4 个；
+        精英比普通少 1 个。改前是「前 4 层 3 个」——对拍显示那会让前期也在掉血，
+        而真正的难度墙本来就在 6-8 层（2026-10-16 曲线实测）。
         """
         layer = max(1, int(layer or 1))
         if difficulty == 'boss':
@@ -261,6 +275,18 @@ class MapManager:
         if difficulty == 'elite':
             return min(1 + (layer - 1) // 3, 3)
         return min(2 + (layer - 1) // 3, 4)
+
+    def encounter_size(self, layer, difficulty='normal'):
+        """遭遇规模（含进阶 A5「孤注一掷」的 +1 敌人）。
+
+        改前固定「普通 1-2 个、精英 1 个」，玩家中后期稳定 7 个单位上场
+        → 7 打 2 必胜，通关率 89%（2026-10-16 平衡对拍）。
+        现在从第 1 层就上 3 个（前 4 层不再是"零风险教学关"），第 5 层起 4 个。
+        """
+        base = self.base_encounter_size(layer, difficulty)
+        if difficulty == 'boss':
+            return base
+        return base + max(0, int(getattr(self, 'encounter_size_bonus', 0) or 0))
 
     def _apply_affixes(self, enemies, layer, count=1):
         """给精英/Boss 敌人叠词缀（狂暴/重甲/淬毒/疾行/巨型/不灭）。
@@ -296,12 +322,16 @@ class MapManager:
         enemies_data = self.data_loader('enemies.json')
         
         if difficulty == 'normal':
-            # 普通怪物：数量随层数增长
+            # 普通怪物：数量与星级上限都随层数增长（星级曲线见 max_enemy_tier）
             count = self.encounter_size(layer, 'normal')
-            available = [e for e in enemies_data if e['tier'] <= layer]
+            available = [e for e in enemies_data
+                         if e['tier'] <= self.max_enemy_tier(layer, 'normal')
+                         and not e.get('is_boss')]
         elif difficulty == 'elite':
-            # 精英：高等级敌人，数量随层数增长
-            available = [e for e in enemies_data if e['tier'] <= layer + 1]
+            # 精英：高一级的敌人池，数量随层数增长
+            available = [e for e in enemies_data
+                         if e['tier'] <= self.max_enemy_tier(layer, 'elite')
+                         and not e.get('is_boss')]
             count = self.encounter_size(layer, 'elite')
         else:
             count = 1

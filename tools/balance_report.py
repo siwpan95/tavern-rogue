@@ -222,6 +222,54 @@ def run_matrix(runs_per_class, advancement, use_ai_targeting, seed_base=1000):
     return per_class
 
 
+def floor_histogram(runs, max_floor=9):
+    """死亡层数分布 + 逐层存活率。
+
+    用来回答"难度是坡还是墙"：如果大量局死在同一层，那一层就是墙（玩家会卡住）；
+    如果分布平缓，说明曲线是连续的。
+    """
+    buckets = {floor: 0 for floor in range(1, max_floor + 1)}
+    wins = 0
+    for run in runs:
+        if run["victory"]:
+            wins += 1
+            continue
+        floor = max(1, min(int(run["floor"]), max_floor))
+        buckets[floor] += 1
+    total = len(runs) or 1
+    reached = {floor: 0 for floor in range(1, max_floor + 2)}
+    for run in runs:
+        top = int(run["floor"]) if not run["victory"] else max_floor
+        for floor in range(1, min(top, max_floor) + 1):
+            reached[floor] += 1
+    return {
+        "deaths_by_floor": buckets,
+        "wins": wins,
+        "survival": {floor: (reached[floor] / total) for floor in range(1, max_floor + 1)},
+        "reached": reached,
+        "total": total,
+    }
+
+
+def format_floor_curve(histogram):
+    """死亡层数分布的 Markdown 表。"""
+    lines = ["### 难度曲线：死亡层数分布 / 逐层存活率", "",
+             "| 层 | 到达率 | 存活率 | 本层阵亡 | 分布 |",
+             "| --- | --- | --- | --- | --- |"]
+    deaths = histogram["deaths_by_floor"]
+    peak = max(deaths.values()) if deaths else 0
+    for floor in sorted(deaths):
+        bar = "█" * int(round(12 * deaths[floor] / peak)) if peak else ""
+        lines.append("| %d | %.0f%% | %.0f%% | %d | %s |" % (
+            floor, histogram["survival"][floor] * 100,
+            (histogram["survival"].get(floor + 1, histogram["wins"] / histogram["total"]) * 100),
+            deaths[floor], bar or "·"))
+    lines.append("")
+    lines.append("通关 %d / %d 局。" % (histogram["wins"], histogram["total"]))
+    lines.append("")
+    return "\n".join(lines)
+
+
 def format_markdown(title, per_class):
     lines = ["## %s" % title, "",
              "| 职业 | 局数 | 通关率 | 平均层数 | 平均战斗数 | 战斗胜率 | 平均剩余HP | 平均宝物 | 平均场上单位 |",
@@ -244,6 +292,8 @@ def format_markdown(title, per_class):
             overall["avg_battles"], overall["battle_win_rate"] * 100, overall["avg_hero_hp"],
             overall["avg_relics"], overall["avg_board"]))
     lines.append("")
+    if all_runs:
+        lines.append(format_floor_curve(floor_histogram(all_runs)))
     return "\n".join(lines)
 
 

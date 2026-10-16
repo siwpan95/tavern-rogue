@@ -40,8 +40,8 @@ class GameManager:
     MAX_RELICS = 6
     MAX_FLOORS = 9
     # 层数成长：每深入一层，敌人生命 +7%、攻击 +5%（进阶倍率再乘在这上面）
-    FLOOR_HEALTH_GROWTH = 0.07
-    FLOOR_ATTACK_GROWTH = 0.05
+    FLOOR_HEALTH_GROWTH = 0.05   # 每层敌人生命 +5%（改前 7%：与进阶倍率叠加后过陡）
+    FLOOR_ATTACK_GROWTH = 0.04   # 每层敌人攻击 +4%
 
     # ─── 与英雄状态同步的代理属性 ───────────────────
 
@@ -135,6 +135,13 @@ class GameManager:
         if mods.get('hero_max_hp'):
             self.hero.max_health = int(mods['hero_max_hp'])
             self.hero.health = self.hero.max_health
+        # 进阶 4「铁石心肠」：起始生命打折
+        start_hp_mult = float(self.difficulty_params.get('hero_start_hp_mult', 1.0) or 1.0)
+        if start_hp_mult < 1.0:
+            self.hero.health = max(1, int(round(self.hero.max_health * start_hp_mult)))
+        elif start_hp_mult > 1.0:
+            self.hero.health = min(self.hero.max_health,
+                                   int(round(self.hero.max_health * start_hp_mult)))
         self.gold = 0
         self.health = self.hero.health
         self.floor = 1
@@ -160,6 +167,7 @@ class GameManager:
         params = self.difficulty_params or {}
         self.map_manager.affix_bonus = int(params.get('affix_bonus', 0) or 0)
         self.map_manager.elite_node_weight = float(params.get('elite_node_weight', 1.0) or 1.0)
+        self.map_manager.encounter_size_bonus = int(params.get('encounter_size_bonus', 0) or 0)
         self.shop_price_mult = float(params.get('shop_price_mult', 1.0) or 1.0)
         mutator_mods = getattr(self, 'mutator_mods', {}) or {}
         # 注意：0.0 是**有意义的**（如「铁人」把营地治疗乘数为 0），不能用 `or 1.0` 兜底
@@ -176,6 +184,8 @@ class GameManager:
             self.event_system, self.relic_system
         )
         self.node_handler.gold_mult = self.gold_mult
+        # CLI/对拍路径也要吃同一套敌人缩放（与 battle.py 共用 scale_enemies）
+        self.node_handler.enemy_scaler = self.scale_enemies
         # 自定义规则：全队战斗修正 + 宝物掉率加成
         self.battle_engine.mutator_ally_attack = int(mutator_mods.get('ally_attack', 0) or 0)
         self.battle_engine.mutator_ally_initiative = int(mutator_mods.get('ally_initiative', 0) or 0)
@@ -498,8 +508,8 @@ class GameManager:
     # ─── 局外成长对接 ───────────────────────────────
 
     def encounter_size(self, difficulty: str = 'normal') -> int:
-        """本层遭遇的敌人数量（与 MapManager 用同一公式，保证 UI 与 CLI 一致）。"""
-        return MapManager.encounter_size(self.floor, difficulty)
+        """本层遭遇的敌人数量（走 MapManager 实例，带上进阶的 +1 敌人）。"""
+        return self.map_manager.encounter_size(self.floor, difficulty)
 
     def scale_enemies(self, enemies: list) -> list:
         """按「层数成长 × 进阶难度 × 自定义规则」缩放敌人属性。

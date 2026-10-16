@@ -35,6 +35,7 @@ class NodeHandler:
         self.relics = []
         self.gold = 0
         self.gold_mult = 1.0  # 进阶：Boss 掉落铸币倍率
+        self.enemy_scaler = None  # 由 GameManager 注入（层数成长 × 进阶 × mutator）
         
     def set_game_state(self, hero, hand, board, relics, gold):
         """设置游戏状态"""
@@ -98,7 +99,13 @@ class NodeHandler:
         if not enemies:
             logs.append("没有敌人可以战斗！")
             return {'type': 'battle', 'result': 'no_enemies'}, logs
-        
+
+        # 敌人强度修正：走 GameManager 的**同一套**公式（层数成长 × 进阶 × 自定义规则）。
+        # 历史缺陷：缩放在 UI 路径（battle.py）才做，CLI/对拍路径完全没吃进阶倍率——
+        # 于是 A1-A4 在对拍里测不出差别，而真人玩家面对的是没被测量的难度。
+        if callable(getattr(self, 'enemy_scaler', None)):
+            enemies = self.enemy_scaler(enemies)
+
         logs.append(f"遭遇战斗！敌人: {', '.join([e['name'] for e in enemies])}")
 
         # 宝物修正要先算出来：种族共鸣的计数会被「职介棱镜」改写
