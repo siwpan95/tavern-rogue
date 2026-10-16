@@ -79,15 +79,16 @@ def check_assets() -> None:
 
     try:
         from tools.gen_audio_assets import check_assets
-        missing = check_assets()
+        # check_assets 返回**退出码**（0 = 齐备，非 0 = 缺失），不是清单
+        code = check_assets()
     except Exception as exc:  # noqa: BLE001
         record(WARN, "音频素材自检失败", str(exc))
         return
-    if not missing:
+    if code == 0:
         record(OK, "音频素材齐备")
     else:
-        record(WARN, "音频素材缺 %d 项" % len(missing),
-               "跑 `python tools/gen_audio_assets.py`；否则静音")
+        record(WARN, "音频素材不齐备（check_assets 退出码 %s）" % code,
+               "跑 `python tools/gen_audio_assets.py`；否则静音降级")
 
 
 def check_saves() -> None:
