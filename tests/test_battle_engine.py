@@ -255,7 +255,7 @@ def test_cleric_resurrects_once_per_battle():
     }
     engine.add_event({"type": "death", "unit": fallen, "side": "ally"})
     engine.process_events()
-    assert fallen["health"] == 2, "牧师应把阵亡友军以 50% 生命救回"
+    assert fallen["health"] == 4, "牧师把阵亡友军救回满血（代价是 1 点英雄生命）"
     assert hero.has_healing_word is False, "治疗祷言每场战斗只能用一次"
 
     fallen["health"] = 0
@@ -265,20 +265,21 @@ def test_cleric_resurrects_once_per_battle():
 
 
 def test_rogue_passive_grants_initiative():
-    """游荡者被动「敏捷+3」→ 全队先攻 +2（此前被动只写在界面上，代码里没有）。"""
+    """游荡者被动「敏捷+3」→ 全队先攻 +1（此前被动只写在界面上，代码里没有）。"""
     hero = create_hero("rogue")
     engine = make_engine(hero=hero)
     allies = [make_unit("甲", 5, 2, initiative=10), make_unit("乙", 5, 2, initiative=8)]
     enemies = [make_unit("敌", 5, 2, initiative=9)]
     engine.simulate_battle(allies, enemies, hero)
-    assert [a["initiative"] for a in allies] == [12, 10]
+    assert [a["initiative"] for a in allies] == [11, 9]
 
 
 def test_class_passives_are_implemented():
     """五个职业的被动必须真的存在（界面文案曾与代码不符）。"""
     assert create_hero("warrior").max_health == 33
-    assert create_hero("rogue").PASSIVE_INITIATIVE_BONUS == 2
+    assert create_hero("rogue").PASSIVE_INITIATIVE_BONUS == 1
     assert create_hero("cleric").max_health == 33
+    assert create_hero("cleric").PASSIVE_TEAM_HEALTH_BONUS == 1
     assert create_hero("wizard").MISSILE_DAMAGE == 4
     warlock = create_hero("warlock")
     assert warlock.max_health == 28

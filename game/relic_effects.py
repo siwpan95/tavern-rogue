@@ -28,6 +28,7 @@ RELIC_EFFECT_HANDLERS = {
     "battle_start_lifesteal": "relics.apply_battle_start_effects",
     "battle_start_debuff": "relics.apply_battle_start_effects",
     "battle_start_shield_all": "relics.apply_battle_start_effects",
+    "battle_start_aegis_all": "relics.apply_battle_start_effects（给全队神盾值）",
     "battle_start_random_guard": "relics.apply_battle_start_effects",
     "extra_gold": "BattleScene._victory / node_handler._apply_battle_rewards",
     "shop_discount": "GameManager.shop_price",
@@ -69,7 +70,7 @@ def pick_relic(relics, rarity=None, rng=None):
 BATTLE_START_EFFECT_TYPES = frozenset({
     "battle_shield_once", "battle_start_damage", "battle_start_buff",
     "battle_start_lifesteal", "battle_start_debuff", "battle_start_shield_all",
-    "battle_start_random_guard",
+    "battle_start_random_guard", "battle_start_aegis_all",
 })
 
 

@@ -588,11 +588,27 @@ class BattleEngine:
             self._log(f"{hero.name} 的敏捷让全队先攻 +{initiative}")
 
         attack = int(getattr(hero, 'PASSIVE_ATTACK_BONUS', 0) or 0)
+        attack += int(getattr(self, 'mutator_ally_attack', 0) or 0)
         if attack > 0:
             for ally in allies:
                 if ally.get('health', 0) > 0:
                     ally['attack'] = ally.get('attack', 0) + attack
             self._log(f"{hero.name} 的以血为契让全队攻击 +{attack}")
+
+        mutator_init = int(getattr(self, 'mutator_ally_initiative', 0) or 0)
+        if mutator_init > 0:
+            for ally in allies:
+                ally['initiative'] = ally.get('initiative', 10) + mutator_init
+            self._log(f"自定义规则：全队先攻 +{mutator_init}")
+
+        team_hp = int(getattr(hero, 'PASSIVE_TEAM_HEALTH_BONUS', 0) or 0)
+        if team_hp > 0:
+            for ally in allies:
+                if ally.get('health', 0) <= 0:
+                    continue
+                ally['max_health'] = ally.get('max_health', ally.get('health', 1)) + team_hp
+                ally['health'] = ally.get('health', 1) + team_hp
+            self._log(f"{hero.name} 的祝福让全队生命上限 +{team_hp}")
 
     def _apply_heal_per_turn(self, hero):
         """宝物：每回合结束恢复英雄生命（再生护符）。"""

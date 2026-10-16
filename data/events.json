@@ -787,5 +787,334 @@
         "outcome": "她吹了声口哨，一群豺狼人从林子里扑了出来！"
       }
     ]
+  },
+  {
+    "id": "sunken_vault",
+    "name": "沉没金库",
+    "description": "半淹在水下的金库门半开着，水面下有什么东西在缓慢移动。",
+    "options": [
+      {
+        "text": "潜水取金（-5 生命）",
+        "effects": {
+          "gain_gold": 15,
+          "damage_hero": 5
+        },
+        "outcome": "你呛了几口水，但抱回了一大袋铸币。"
+      },
+      {
+        "text": "撬开保险柜（6 铸币）",
+        "effects": {
+          "cost_gold": 6,
+          "gain_relic": {
+            "random": true
+          }
+        },
+        "outcome": "柜子里躺着一件还算完好的魔法物品。"
+      },
+      {
+        "text": "离开",
+        "effects": {},
+        "outcome": "你决定不去招惹水下的东西。"
+      }
+    ]
+  },
+  {
+    "id": "war_horn_found",
+    "name": "战场遗号",
+    "description": "一具披甲骸骨怀里抱着一支青铜号角，号角上还刻着军团的徽记。",
+    "options": [
+      {
+        "text": "吹响号角",
+        "effects": {
+          "buff_board": {
+            "keyword": "WARRIOR_SPIRIT"
+          }
+        },
+        "outcome": "号声回荡，你的队伍眼里燃起了战意。"
+      },
+      {
+        "text": "拆下护甲（-3 生命）",
+        "effects": {
+          "damage_hero": 3,
+          "upgrade_board": {
+            "stat": "health",
+            "value": 3
+          }
+        },
+        "outcome": "你把护甲套在了最前面的同伴身上。"
+      },
+      {
+        "text": "就地掩埋",
+        "effects": {
+          "heal_hero": 3
+        },
+        "outcome": "你为他垒了一座石堆，心里安稳了些。"
+      }
+    ]
+  },
+  {
+    "id": "arcane_lecture",
+    "name": "秘法讲堂",
+    "description": "一位游方法师愿意用一堂课换你的保护。",
+    "options": [
+      {
+        "text": "听他讲完",
+        "effects": {
+          "enchant_board": {
+            "keyword": "AEGIS",
+            "all": true
+          }
+        },
+        "outcome": "全队学会了把奥术能量编成护罩。"
+      },
+      {
+        "text": "只买讲义（5 铸币）",
+        "effects": {
+          "cost_gold": 5,
+          "discover_adventurer": {
+            "tier": 4,
+            "random": true
+          }
+        },
+        "outcome": "讲义里夹着一封推荐信，来了一位新同伴。"
+      },
+      {
+        "text": "送他上路",
+        "effects": {
+          "gain_gold": 4
+        },
+        "outcome": "他留下一小袋路费表示感谢。"
+      }
+    ]
+  },
+  {
+    "id": "thorn_garden",
+    "name": "荆棘花园",
+    "description": "围墙内长满了会动的荆棘，中心有一朵发光的果实。",
+    "options": [
+      {
+        "text": "硬闯摘果（-4 生命）",
+        "effects": {
+          "damage_hero": 4,
+          "gain_relic": {
+            "random": true
+          }
+        },
+        "outcome": "你带着满身划痕和一件宝物退了出来。"
+      },
+      {
+        "text": "割下荆棘编甲",
+        "effects": {
+          "enchant_board": {
+            "keyword": "THORNS",
+            "all": true
+          }
+        },
+        "outcome": "全队披上了会反弹伤害的荆棘甲。"
+      },
+      {
+        "text": "绕开花园",
+        "effects": {},
+        "outcome": "你从墙外绕了过去。"
+      }
+    ]
+  },
+  {
+    "id": "dice_den",
+    "name": "骰子窝",
+    "description": "地下赌场里烟雾弥漫，庄家朝你抬了抬下巴。",
+    "options": [
+      {
+        "text": "押上全部运气",
+        "effects": {
+          "coin_flip": true,
+          "gain_gold": 10
+        },
+        "outcome": "骰子停下之前，谁也说不准。"
+      },
+      {
+        "text": "押一名冒险者",
+        "effects": {
+          "sacrifice_adventurer": true,
+          "gain_relic": {
+            "random": true
+          }
+        },
+        "outcome": "庄家收下了你的同伴，推过来一件宝物。"
+      },
+      {
+        "text": "只在旁边看",
+        "effects": {
+          "reveal_map": true
+        },
+        "outcome": "你从赌客的闲谈里听来了前路的布防。"
+      }
+    ]
+  },
+  {
+    "id": "cursed_mirror",
+    "name": "受诅之镜",
+    "description": "镜中的你比你慢了半拍，并且正在朝你伸手。",
+    "options": [
+      {
+        "text": "打碎镜子",
+        "effects": {
+          "damage_all": 3,
+          "purify_board": true
+        },
+        "outcome": "碎片划伤了所有人，但也震散了身上的邪气。"
+      },
+      {
+        "text": "与镜中的自己交易",
+        "effects": {
+          "gain_relic": {
+            "random": true
+          },
+          "damage_hero": 7
+        },
+        "outcome": "镜子裂开，一件宝物落在你脚边——你的倒影不见了。"
+      },
+      {
+        "text": "用布盖住它",
+        "effects": {},
+        "outcome": "你盖住了镜子，绕道而行。"
+      }
+    ]
+  },
+  {
+    "id": "caravan_wreck",
+    "name": "商队残骸",
+    "description": "翻倒的货车散落一地，箱子里还有没被抢走的东西。",
+    "options": [
+      {
+        "text": "搜刮货物",
+        "effects": {
+          "gain_gold": 8,
+          "gain_relic": {
+            "random": true
+          }
+        },
+        "outcome": "你捡到了铸币和一件不知用途的魔法物品。"
+      },
+      {
+        "text": "救治幸存者（-4 铸币）",
+        "effects": {
+          "cost_gold": 4,
+          "gain_adventurer": {
+            "tier": 3,
+            "random": true
+          }
+        },
+        "outcome": "幸存者决定跟着你走。"
+      },
+      {
+        "text": "烧掉残骸",
+        "effects": {
+          "regenerate_map": true
+        },
+        "outcome": "火光改变了前路的模样。"
+      }
+    ]
+  },
+  {
+    "id": "moon_well",
+    "name": "月井",
+    "description": "井水映着不存在的月亮，喝下去的人据说会想起上辈子的战斗。",
+    "options": [
+      {
+        "text": "饮下一口",
+        "effects": {
+          "heal": 8,
+          "enchant_board": {
+            "keyword": "REGENERATION"
+          }
+        },
+        "outcome": "队伍恢复了些许，其中一人的伤口开始自行愈合。"
+      },
+      {
+        "text": "投下铸币（5 铸币）",
+        "effects": {
+          "cost_gold": 5,
+          "buff_board": {
+            "keyword": "INTIMIDATE"
+          }
+        },
+        "outcome": "水面泛起涟漪，全队的气势压得敌人喘不过气。"
+      },
+      {
+        "text": "不碰井水",
+        "effects": {},
+        "outcome": "你对着井水行了个礼就离开了。"
+      }
+    ]
+  },
+  {
+    "id": "old_barracks",
+    "name": "废弃兵营",
+    "description": "床铺还在，武器架上空空如也——除了角落里那几件。",
+    "options": [
+      {
+        "text": "翻找装备",
+        "effects": {
+          "gain_relic": {
+            "random": true
+          },
+          "lose_relic": 1
+        },
+        "outcome": "你换掉了身上一件旧物，拿了件更顺手的。"
+      },
+      {
+        "text": "召集散兵（7 铸币）",
+        "effects": {
+          "cost_gold": 7,
+          "gain_adventurer": {
+            "tier": 5,
+            "random": true
+          }
+        },
+        "outcome": "几名老兵愿意为你而战。"
+      },
+      {
+        "text": "就地休整",
+        "effects": {
+          "heal_hero": 6
+        },
+        "outcome": "你们轮流睡了几个小时。"
+      }
+    ]
+  },
+  {
+    "id": "dragon_omen",
+    "name": "龙兆",
+    "description": "天空中出现了一道巨大的翼影，龙正在远处盘旋。",
+    "options": [
+      {
+        "text": "追随翼影",
+        "effects": {
+          "start_battle": {
+            "enemy": "wyvern",
+            "reward_gold": 18
+          }
+        },
+        "outcome": "你追上了一头落单的飞龙。"
+      },
+      {
+        "text": "全速避开",
+        "effects": {
+          "avoid_combat": true,
+          "damage_hero": 2
+        },
+        "outcome": "你们在碎石里狂奔，摔伤了几处，但躲开了龙。"
+      },
+      {
+        "text": "向龙祈祷",
+        "effects": {
+          "buff_board": {
+            "keyword": "FIRE_BREATH"
+          }
+        },
+        "outcome": "队伍里有人学会了模仿龙息。"
+      }
+    ]
   }
 ]

@@ -333,5 +333,47 @@
       "value": 1,
       "cap": 5
     }
+  },
+  {
+    "id": "aegis_sigil",
+    "name": "神盾徽记",
+    "rarity": "common",
+    "description": "战斗开始时，所有友军获得 2 点神盾值。",
+    "effect": {
+      "type": "battle_start_aegis_all",
+      "value": 2
+    }
+  },
+  {
+    "id": "soul_lantern",
+    "name": "灵魂提灯",
+    "rarity": "rare",
+    "description": "友军击杀敌人时恢复 2 点生命值。",
+    "effect": {
+      "type": "heal_on_kill",
+      "value": 2
+    }
+  },
+  {
+    "id": "war_drums",
+    "name": "行军战鼓",
+    "rarity": "rare",
+    "description": "你的冒险者攻击时，有 20% 几率再次攻击。",
+    "effect": {
+      "type": "double_attack_chance",
+      "value": 0.2
+    }
+  },
+  {
+    "id": "thorn_mail",
+    "name": "荆棘锁甲",
+    "rarity": "rare",
+    "description": "所有矮人冒险者获得荆棘（反弹 50% 承受伤害）。",
+    "effect": {
+      "type": "tribe_buff",
+      "tribe": "dwarf",
+      "stat": "THORNS",
+      "value": 1
+    }
   }
 ]

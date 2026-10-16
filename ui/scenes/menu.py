@@ -25,7 +25,9 @@ class MenuScene(Scene):
             y += 70
         self.buttons.add(450, y, 300, 50, "开始游戏",
                          lambda: self.switch_to('class_select'))
-        self.buttons.add(450, y + 70, 300, 50, "退出游戏",
+        self.buttons.add(450, y + 70, 300, 50, "冒险图鉴",
+                         lambda: self.switch_to('collection'))
+        self.buttons.add(450, y + 140, 300, 50, "退出游戏",
                          lambda: setattr(self.app, 'running', False))
         self.buttons.draw_all(self.screen)
 
@@ -45,8 +47,8 @@ class ClassSelectScene(Scene):
         self._classes = self.gm.progress.get_available_classes()
         self._descriptions = {
             'warrior': '被动: 生命值+3, 技能: 战争咆哮（守卫+2HP）',
-            'rogue': '被动: 敏捷+3（全队先攻+2）, 技能: 暗影突袭（2点伤害）',
-            'cleric': '被动: 生命值+3, 技能: 治疗祷言（每战一次救回友军，耗1生命）',
+            'rogue': '被动: 敏捷+3（全队先攻+1）, 技能: 暗影突袭（2点伤害）',
+            'cleric': '被动: 自身+3、全队生命上限+1, 技能: 治疗祷言（满血救回，耗1生命）',
             'wizard': '被动: 法力+5（飞弹 4 点）, 技能: 魔法飞弹（由敌人分摊）',
             'warlock': '被动: 生命值-2、全队攻击+1, 技能: 生命分流（HP代金）',
         }
@@ -101,5 +103,6 @@ class ClassSelectScene(Scene):
         if cls_info and cls_info.get('locked', False):
             return
         self.gm.clear_saved_run()  # 开新局就清掉旧存档，避免「继续冒险」读到上一局
-        self.gm.new_game(hero_class, seed=getattr(self.app, 'seed', None))
+        self.gm.new_game(hero_class, seed=getattr(self.app, 'seed', None),
+                         mutators=getattr(self.app, 'mutators', None))
         self.switch_to('recruit')

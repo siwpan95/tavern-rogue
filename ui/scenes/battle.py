@@ -69,6 +69,8 @@ class BattleScene(Scene):
 
         self.allies = copy.deepcopy(self.gm.board)
         self.messages = ["⚔ 战斗准备中……"]
+        # 图鉴：这一局遇到过的敌人
+        self.gm.mark_collection('enemies', [e.get('id') for e in self.enemies])
         self.phase = 'prepare'
         self.turn = 0
 

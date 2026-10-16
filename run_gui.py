@@ -21,9 +21,17 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(description="TavernRogue - 酒馆异闻录")
     parser.add_argument("--seed", type=int, default=None,
                         help="固定随机种子（相同种子 = 相同地图与随机序列）")
+    parser.add_argument("--mutator", action="append", default=None, metavar="ID",
+                        help="启用自定义规则（可重复；如 one_hp / midas / ironman）")
+    parser.add_argument("--list-mutators", action="store_true", help="列出全部自定义规则")
     return parser.parse_args(argv)
 
 
 if __name__ == '__main__':
     args = parse_args()
-    main(seed=args.seed)
+    if args.list_mutators:
+        from game.mutators import list_mutators
+        for entry in list_mutators():
+            print("%-12s [%s] %s" % (entry["id"], entry["type"], entry["description"]))
+        sys.exit(0)
+    main(seed=args.seed, mutators=args.mutator)

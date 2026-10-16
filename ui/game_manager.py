@@ -22,9 +22,16 @@ from game.ai_content import AIContentGenerator
 from game.persistence import ProgressManager
 
 
+def _mod_mult(mods: dict, key: str) -> float:
+    """取 mutator 的倍率；**0.0 是合法值**（如「铁人」把营地治疗乘数为 0）。"""
+    value = (mods or {}).get(key)
+    if value is None:
+        return 1.0
+    return float(value)
+
+
 class GameManager:
     """中央游戏状态管理器 — 所有 Scene 共享的单例状态源"""
-
     MAX_HEALTH = 30
     MAX_GOLD = 10
     MAX_CARRY_GOLD = 5
@@ -91,15 +98,19 @@ class GameManager:
 
     # ─── 游戏生命周期 ───────────────────────────────
 
-    def new_game(self, hero_class: str, seed: int = None):
-        """开始新游戏，应用当前职业进阶难度参数。
+    def new_game(self, hero_class: str, seed: int = None, mutators=None):
+        """开始新游戏，应用当前职业进阶难度参数与自定义规则（mutators）。
 
         seed 只在显式传入时用于播种（便于复现与分享）；不传则只记录一个随机种子到本局，
         避免影响其它调用方的随机序列。
         """
+        from game.mutators import build_mods, parse_mutators
+
         self._run_class_id = hero_class
         self._run_victory = False
         self._boss_defeated = False
+        self.mutators = parse_mutators(mutators) if mutators else []
+        self.mutator_mods = build_mods(self.mutators)
         self.seed = int(seed) if seed is not None else random.randrange(1, 1_000_000_000)
         if seed is not None:
             random.seed(self.seed)
@@ -109,13 +120,23 @@ class GameManager:
         }
         self.hero = create_hero(hero_class)
         self.difficulty_params = self.progress.get_difficulty_params(hero_class)
+        mods = self.mutator_mods
+        if mods.get('post_battle_heal'):
+            self.hero.mutator_post_battle_heal = int(mods['post_battle_heal'])
+        if mods.get('board_limit'):
+            self.MAX_BOARD = int(mods['board_limit'])
         self._start_gold_penalty = int(self.difficulty_params.get('start_gold_penalty', 0) or 0)
+        self._start_gold_bonus = int(mods.get('start_gold', 0) or 0)
         # 进阶提供英雄额外生命值
         bonus_hp = self.difficulty_params.get('hero_bonus_hp', 0)
         self.hero.max_health += bonus_hp
         self.hero.health += bonus_hp
+        # 自定义规则「一击必死」等：绝对生命值覆盖（在进阶加成之后生效）
+        if mods.get('hero_max_hp'):
+            self.hero.max_health = int(mods['hero_max_hp'])
+            self.hero.health = self.hero.max_health
         self.gold = 0
-        self.health = self.MAX_HEALTH + bonus_hp
+        self.health = self.hero.health
         self.floor = 1
         self.hand.clear()
         self.board.clear()
@@ -140,8 +161,13 @@ class GameManager:
         self.map_manager.affix_bonus = int(params.get('affix_bonus', 0) or 0)
         self.map_manager.elite_node_weight = float(params.get('elite_node_weight', 1.0) or 1.0)
         self.shop_price_mult = float(params.get('shop_price_mult', 1.0) or 1.0)
+        mutator_mods = getattr(self, 'mutator_mods', {}) or {}
+        # 注意：0.0 是**有意义的**（如「铁人」把营地治疗乘数为 0），不能用 `or 1.0` 兜底
+        self.shop_price_mult *= _mod_mult(mutator_mods, 'shop_price_mult')
         self.gold_mult = float(params.get('boss_gold_mult', 1.0) or 1.0)
+        self.gold_mult *= _mod_mult(mutator_mods, 'gold_mult')
         self.camp_heal_mult = float(params.get('camp_heal_mult', 1.0) or 1.0)
+        self.camp_heal_mult *= _mod_mult(mutator_mods, 'camp_heal_mult')
         self.event_system = EventSystem(data_loader, ai_generator=ai_generator)
         self.relic_system = RelicSystem(data_loader)
         self.reward_system = RewardSystem(data_loader, self.relic_system)
@@ -150,16 +176,23 @@ class GameManager:
             self.event_system, self.relic_system
         )
         self.node_handler.gold_mult = self.gold_mult
+        # 自定义规则：全队战斗修正 + 宝物掉率加成
+        self.battle_engine.mutator_ally_attack = int(mutator_mods.get('ally_attack', 0) or 0)
+        self.battle_engine.mutator_ally_initiative = int(mutator_mods.get('ally_initiative', 0) or 0)
+        if self.relic_system is not None:
+            self.relic_system.extra_drop_bonus = float(mutator_mods.get('relic_drop_bonus', 0.0) or 0.0)
 
     # ─── 铸币经济 ──────────────────────────────────
 
     def award_turn_gold(self) -> int:
-        """发放回合铸币: 3 + 层数 + 人类共鸣加成 − 起始铸币惩罚，上限 10"""
+        """发放回合铸币: 3 + 层数 + 人类共鸣 + mutator 开局铸币 − 起始惩罚，上限 10"""
         penalty = int(getattr(self, '_start_gold_penalty', 0) or 0)
+        bonus = int(getattr(self, '_start_gold_bonus', 0) or 0)
         self._start_gold_penalty = 0  # 起始惩罚只在第一回合生效
-        turn_gold = max(0, 3 + self.floor + self.tribe_gold_bonus() - penalty)
+        self._start_gold_bonus = 0
+        turn_gold = max(0, 3 + self.floor + self.tribe_gold_bonus() - penalty + bonus)
         old = self.gold
-        self.gold = min(self.gold + turn_gold, self.MAX_GOLD)
+        self.gold = min(self.gold + turn_gold, self.MAX_GOLD + bonus)
         return self.gold - old
 
     def tribe_gold_bonus(self) -> int:
@@ -220,6 +253,32 @@ class GameManager:
 
     def clear_saved_run(self) -> bool:
         return run_save.clear_run()
+
+    # ─── 图鉴（Collection）──────────────────────────
+
+    def collection(self):
+        """图鉴：记录见过的宝物/敌人/事件（数据落在局外进度里）。"""
+        from game.collection import Collection
+
+        if getattr(self, '_collection', None) is None:
+            self._collection = Collection(self.progress)
+        return self._collection
+
+    def collection_totals(self) -> dict:
+        """各类内容的**总数**（用于算完成度）。"""
+        return {
+            'relics': len(self.load_data('relics.json') or []),
+            'enemies': len(self.load_data('enemies.json') or []),
+            'events': len(self.load_data('events.json') or []),
+        }
+
+    def mark_collection(self, kind: str, entry_ids) -> int:
+        """把一局里遇到的内容记进图鉴；返回首次发现的数量。"""
+        try:
+            return self.collection().mark_many(kind, entry_ids)
+        except Exception as exc:  # noqa: BLE001 - 图鉴不该拖垮游戏
+            print("[TavernRogue] 图鉴记录失败：%s" % exc, file=sys.stderr)
+            return 0
 
     def is_hero_alive(self) -> bool:
         return self.health > 0
@@ -363,10 +422,13 @@ class GameManager:
         return len(self.relics) < self.MAX_RELICS
 
     def add_relic(self, relic: dict) -> bool:
-        if self.can_add_relic():
-            self.relics.append(relic)
-            return True
-        return False
+        """获得宝物（同时记入图鉴）。"""
+        if not self.can_add_relic():
+            return False
+        self.relics.append(relic)
+        if isinstance(relic, dict) and relic.get('id'):
+            self.mark_collection('relics', [relic['id']])
+        return True
 
     # ─── 数据加载 ──────────────────────────────────
 
@@ -417,11 +479,11 @@ class GameManager:
         return MapManager.encounter_size(self.floor, difficulty)
 
     def scale_enemies(self, enemies: list) -> list:
-        """按「层数成长 × 进阶难度」缩放敌人属性。
+        """按「层数成长 × 进阶难度 × 自定义规则」缩放敌人属性。
 
         历史缺陷：缩放只看进阶倍率 —— 进阶 0 时敌人**完全不随层数成长**，
         于是第 8/9 层与第 2 层一样软，平衡对拍显示通关率 89%（2026-10-16）。
-        现在改为两层叠加：层数成长给基线曲线，进阶倍率在其上再乘。
+        现在改为两层叠加：层数成长给基线曲线，进阶倍率与 mutator 在其上再乘。
         """
         floor = max(1, int(self.floor or 1))
         mult_hp = 1.0 + self.FLOOR_HEALTH_GROWTH * (floor - 1)
@@ -429,6 +491,9 @@ class GameManager:
         if self.difficulty_params:
             mult_hp *= self.difficulty_params.get('enemy_health_mult', 1.0)
             mult_atk *= self.difficulty_params.get('enemy_attack_mult', 1.0)
+        mutator_mods = getattr(self, 'mutator_mods', {}) or {}
+        mult_hp *= _mod_mult(mutator_mods, 'enemy_health_mult')
+        mult_atk *= _mod_mult(mutator_mods, 'enemy_attack_mult')
         scaled = []
         for e in enemies:
             copy = e.copy()
@@ -466,6 +531,9 @@ class GameManager:
                                       self.progress.data.get('victories', 0)),
         ]
         lines.append(self.next_goal_hint())
+        if getattr(self, 'mutators', None):
+            from game.mutators import describe
+            lines.append("自定义规则：" + describe(self.mutators))
         return lines
 
     def next_goal_hint(self) -> str:

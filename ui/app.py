@@ -27,8 +27,9 @@ from game.persistence import ProgressManager
 class TavernRogueApp:
     """精简的应用外壳 — 仅负责 pygame 初始化 + 主循环"""
 
-    def __init__(self, seed=None):
+    def __init__(self, seed=None, mutators=None):
         self.seed = seed  # 显式种子（None = 每局随机），由职业选择场景带进 new_game
+        self.mutators = list(mutators or [])  # 自定义规则（--mutator）
         pygame.init()
         fonts.ensure_init()  # 必须在 pygame.init() 之后
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -55,6 +56,7 @@ class TavernRogueApp:
     def _register_scenes(self):
         """注册所有场景"""
         from ui.scenes.menu import MenuScene, ClassSelectScene
+        from ui.scenes.collection_scene import CollectionScene
         from ui.scenes.recruit import RecruitScene
         from ui.scenes.map_scene import MapScene
         from ui.scenes.battle import BattleScene
@@ -66,6 +68,7 @@ class TavernRogueApp:
         from ui.scenes.end_scenes import GameOverScene, VictoryScene
 
         self.scenes.register('menu', MenuScene)
+        self.scenes.register('collection', CollectionScene)
         self.scenes.register('class_select', ClassSelectScene)
         self.scenes.register('recruit', RecruitScene)
         self.scenes.register('map', MapScene)
@@ -96,8 +99,8 @@ class TavernRogueApp:
         pygame.quit()
 
 
-def main(seed=None):
-    app = TavernRogueApp(seed=seed)
+def main(seed=None, mutators=None):
+    app = TavernRogueApp(seed=seed, mutators=mutators)
     app.run()
     sys.exit()
 

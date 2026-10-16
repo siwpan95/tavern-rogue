@@ -50,8 +50,16 @@ class Hero:
         self.skill_used = False
 
     def on_battle_end(self):
-        """战斗结束钩子（子类可覆盖：如牧师被动回血）；返回恢复的生命值"""
-        return 0
+        """战斗结束钩子；返回恢复的生命值。
+
+        「铁人」等自定义规则通过 `mutator_post_battle_heal` 在这里生效。
+        """
+        heal = int(getattr(self, 'mutator_post_battle_heal', 0) or 0)
+        if heal <= 0:
+            return 0
+        before = self.health
+        self.heal(heal)
+        return self.health - before
     
     def add_relic(self, relic):
         """添加宝物"""
@@ -103,7 +111,7 @@ class Rogue(Hero):
 
     被动：敏捷 +3 → 全队先攻 +2（先攻是引擎已有字段）
     """
-    PASSIVE_INITIATIVE_BONUS = 2
+    PASSIVE_INITIATIVE_BONUS = 1
 
     def __init__(self):
         super().__init__("游荡者", "rogue")
@@ -121,13 +129,16 @@ class Rogue(Hero):
 class Cleric(Hero):
     """牧师 - 治疗祷言
 
-    被动：生命值 +3（"治疗+3"折算为体魄）。
+    被动：生命值 +3 + **全队生命上限 +2**（"治疗+3"的战斗面落点）。
     ⚠ 曾经把它实现成"每场战斗后回 3 血"——一局约 10 场战斗等于 +30 HP，
     牧师通关率直接飙到 78%（其他职业 33-54%），已改回一次性加成。
-    技能：每场战斗一次救回阵亡友军，但只恢复 **50%** 生命。
+    ⚠ 只补复活不改被动时牧师仍是 34%（全职业最低）：防御性技能在"敌人更硬"的
+    内容下不如直接加数值，所以补了全队生命上限。
+    技能：每场战斗一次满血救回阵亡友军，代价是 1 点英雄生命。
     """
     PASSIVE_MAX_HEALTH_BONUS = 3
-    REVIVE_HEALTH_RATIO = 0.5
+    PASSIVE_TEAM_HEALTH_BONUS = 1   # 全队生命上限 +1（+2 时牧师通关率 52%，偏强）
+    REVIVE_HEALTH_RATIO = 1.0
     REVIVE_HEALTH_COST = 1  # 每次救回消耗 1 点英雄生命（以命换命）
 
     def __init__(self):

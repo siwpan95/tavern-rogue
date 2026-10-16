@@ -169,6 +169,15 @@ class RelicSystem:
                         target['keywords'].append('SHIELD')
                         log.append(f"{relic['name']}: {target['name']} 获得力场护盾")
 
+            elif effect_type == 'battle_start_aegis_all':
+                # 战斗开始时给所有友军神盾值（神盾徽记）
+                value = int(effect.get('value', 0) or 0)
+                for ally in allies:
+                    if ally.get('health', 0) <= 0:
+                        continue
+                    ally['_aegis'] = max(int(ally.get('_aegis', 0) or 0), value)
+                log.append(f"{relic['name']}: 所有友军获得 {value} 点神盾")
+
             elif effect_type == 'battle_start_shield_all':
                 # 战斗开始时给所有友军施加护盾（守护图腾）
                 for ally in allies:
@@ -246,8 +255,9 @@ class RelicSystem:
         return int(self.get_battle_mods().get('extra_gold', 0) or 0)
 
     def get_relic_drop_bonus(self):
-        """宝物掉落率加成（幸运币）。"""
-        return float(self.get_battle_mods().get('relic_drop_bonus', 0.0) or 0.0)
+        """宝物掉落率加成（幸运币）+ 自定义规则加成（贪婪）。"""
+        base = float(self.get_battle_mods().get('relic_drop_bonus', 0.0) or 0.0)
+        return base + float(getattr(self, 'extra_drop_bonus', 0.0) or 0.0)
 
     def get_shop_discount(self):
         """商店折扣（商人祝福）。"""

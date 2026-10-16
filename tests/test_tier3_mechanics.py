@@ -54,14 +54,22 @@ def test_pick_relic_with_explicit_rarity():
 
 
 def test_real_pool_epic_share_is_rare(game_data):
-    """真实池子里 epic 的权重占比应该明显低于等概率。"""
+    """真实池子里 epic 的权重占比应该明显低于等概率。
+
+    注意：权重是**按件**给的，所以实际稀有度占比 = Σ(该档件数×权重) / Σ(全部件数×权重)。
+    这里直接用池子算出期望值再比对，而不是拿权重当占比。
+    """
     rng = random.Random(7)
     pool = game_data["relics"]
+    total_weight = sum(RELIC_RARITY_WEIGHTS[r["rarity"]] for r in pool)
+    epic_weight = sum(RELIC_RARITY_WEIGHTS[r["rarity"]] for r in pool if r["rarity"] == "epic")
+    expected_share = epic_weight / total_weight
+
     epic = sum(1 for _ in range(4000) if pick_relic(pool, rng=rng)["rarity"] == "epic")
     share = epic / 4000
     equal_share = sum(1 for r in pool if r["rarity"] == "epic") / len(pool)
-    assert share == pytest.approx(RELIC_RARITY_WEIGHTS["epic"], abs=0.03)
-    assert share < equal_share, "加权后 epic 掉率必须低于等概率（%.2f < %.2f）" % (share, equal_share)
+    assert share == pytest.approx(expected_share, abs=0.03)
+    assert share < equal_share, "加权后 epic 掉率必须低于等概率（%.3f < %.3f）" % (share, equal_share)
 
 
 # ─── P1-4 三件"改变玩法"的史诗宝物 ────────────────────────

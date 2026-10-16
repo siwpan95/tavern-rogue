@@ -15,6 +15,8 @@ class EventScene(Scene):
         super().enter(**kwargs)
         self._node = node
         self._event = self.gm.event_system.select_random_event()
+        if self._event:
+            self.gm.mark_collection('events', [self._event.get('id')])
         if not self._event:
             print("[TavernRogue] 没有可用事件")
             self.switch_to('map')

@@ -65,6 +65,15 @@ python tools/fetch_font.py            # 下载到 assets/fonts/（带 sha256 校
 python tools/fetch_font.py --check    # 只检查是否就位
 ```
 
+### 自定义规则（mutators）
+
+8 条可自由组合的修饰符（`2^8` 种玩法），既当难度旋钮也当内容放大器：
+
+```bash
+python run_gui.py --list-mutators                 # 列出全部
+python run_gui.py --mutator one_hp --mutator midas   # 一击必死 + 点金
+```
+
 ### 测试
 
 ```bash
@@ -89,20 +98,22 @@ TavernRogue/
 ├── docs/                       # 平衡报告与内容设计稿
 ├── ui/                         # 图形界面层（MVC + Scene 架构）
 │   ├── app.py                  # 应用外壳：pygame 初始化 + 主循环 + 音频
-│   ├── game_manager.py         # Model：中央状态管理（含局内存档）
+│   ├── game_manager.py         # Model：中央状态管理（含局内存档与图鉴）
 │   ├── renderer.py             # View：共享渲染（颜色/字体/按钮/卡片）
-│   └── scenes/                 # Controller：12 个游戏场景
+│   └── scenes/                 # Controller：13 个游戏场景（含冒险图鉴）
 ├── game/                       # 游戏逻辑模块（与 UI 解耦，可独立测试）
-│   ├── hero.py                 #   英雄职业系统
-│   ├── engine.py               #   战斗引擎（事件队列）
+│   ├── hero.py                 #   英雄职业系统（5 职业，被动 + 技能）
+│   ├── engine.py               #   战斗引擎（事件队列，18 个关键词）
 │   ├── ai_targeting.py         #   目标选择（自研引擎决策树 + 回退规则）
 │   ├── event_effects.py        #   事件效果唯一实现
-│   ├── relic_effects.py        #   宝物效果登记表 + 战斗修正
+│   ├── relic_effects.py        #   宝物效果登记表 + 稀有度权重 + 战斗修正
 │   ├── battle_audit.py         #   战斗审计（WorldLog 旁路）
 │   ├── audio.py                #   音频播放（pygame.mixer；素材离线生成）
+│   ├── mutators.py             #   自定义规则（8 条修饰符）
+│   ├── collection.py           #   图鉴（发现记录）
 │   ├── run_save.py             #   局内存档（SaveLoadManager）
 │   ├── recruit.py / map_manager.py / node_handler.py / events.py / relics.py / rewards.py
-│   └── persistence.py          #   局外成长存档
+│   └── persistence.py          #   局外成长存档（含进阶五级阶梯）
 └── data/                       # 游戏数据（JSON 驱动）
 ```
 
@@ -126,18 +137,20 @@ TavernRogue/
 - [x] 英雄职业系统（5 个职业，各有**已实现的被动**与一次性技能）
 - [x] 酒馆招募系统（购买、刷新、三连合成、术士生命分流）
 - [x] 地图生成系统（9 层、层变体、精英/Boss 词缀、Boss 池、遭遇规模随层数成长）
-- [x] 宝物系统（**32 件**魔法物品，效果全部接线；稀有度 60/30/10 加权；含 3 件"改变玩法"的史诗宝物）
-- [x] 事件系统（**26 个**事件，21 种效果全部有实现，同局不重复）
-- [x] 敌人与 Boss（**47 个敌人**，11 精英 / 12 Boss，6 个 Boss 带 `counter_tag`）
+- [x] 宝物系统（**36 件**魔法物品，效果全部接线；稀有度 60/30/10 加权；含 3 件"改变玩法"的史诗宝物）
+- [x] 事件系统（**36 个**事件，21 种效果全部有实现，同局不重复）
+- [x] 敌人与 Boss（**56 个敌人**，14 精英 / 12 Boss，6 个 Boss 带 `counter_tag`）
 - [x] 奖励系统（战斗奖励、发现机制）
-- [x] pygame-ce 图形界面（12 个场景完整实现）
+- [x] pygame-ce 图形界面（13 个场景完整实现）
 - [x] 铸币经济（回合收入、携带上限、人类共鸣加成）
 - [x] 营地训练（永久属性强化）
 - [x] 局外成长（职业解锁链、**进阶 0-5 五级阶梯**、战绩与累计统计）
+- [x] **冒险图鉴**（宝物/敌人/事件的发现进度）
+- [x] **自定义规则**（8 条 mutators，可自由组合）
 - [x] 局内存档（继续冒险，基于自研引擎 SaveLoadManager）
 - [x] 音频（bloodmusic 离线生成的 38 音效 + 10 BGM，缺失静音降级）
 - [x] 固定种子（`python run_gui.py --seed 12345`，结算屏显示种子）
-- [x] 自动化验证（pytest **235** 用例 + `tools/balance_report.py` 平衡对拍）
+- [x] 自动化验证（pytest **257** 用例 + `tools/balance_report.py` 平衡对拍）
 
 ## 内容设计稿与平衡报告
 
