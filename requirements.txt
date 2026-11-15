@@ -5,3 +5,6 @@ pygame-ce>=2.5,<3
 # 自研引擎（siwpan / PyPI）：目标选择用它的决策树、战斗审计用 WorldLog、局内存档用 SaveLoadManager。
 # 未安装时游戏会自动降级为仓内等价实现，并在 stderr 出声提示，仍可正常运行。
 allin-engine>=1.0.0
+
+# allin-repocheck-r6-fix (2026-11-15)
+ollama
