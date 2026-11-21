@@ -90,7 +90,12 @@ class ClassSelectScene(Scene):
             adv = cls.get('advancement', 0)
             adv_label = f'进阶 {adv}' if adv > 0 else '进阶 0'
             best = cls.get('best_record', {})
-            best_text = f"最佳: {'通关' if best.get('victory') else f'第{best.get('floor', 0)}层'}"
+            # 2026-11-21 修：原写成 f"最佳: {'通关' if ... else f'第{best.get('floor', 0)}层'}"
+            # —— f-string 内嵌同引号 f-string 是 **Python 3.12+**（PEP 701）才允许的语法，
+            # 而本仓声明支持更低版本；3.8~3.11 上这是 SyntaxError。改为先算好子串。
+            _floor = best.get('floor', 0)
+            _best_stage = '通关' if best.get('victory') else f'第{_floor}层'
+            best_text = f"最佳: {_best_stage}"
             info = fonts.get('small').render(f'{adv_label} | {best_text}', True, (180, 160, 120))
             self.screen.blit(info, info.get_rect(center=(x + w // 2, y + 130)))
 
